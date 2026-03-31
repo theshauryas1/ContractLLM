@@ -1,0 +1,1 @@
+Products must only cite facts that are present in the retrieved support documents.
