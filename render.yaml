@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: contract-llm-api
+    env: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    autoDeploy: true
+    healthCheckPath: /health
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: REQUIRE_AUTH
+        value: true
+      - key: LLM_PROVIDER
+        value: xai
+      - key: TRANSLATION_PROVIDER
+        value: xai
+      - key: EMBEDDING_PROVIDER
+        value: lexical
+      - key: DATABASE_URL
+        sync: false
+      - key: XAI_API_KEY
+        sync: false
+      - key: API_KEY
+        sync: false
+      - key: BACKEND_CORS_ORIGINS
+        sync: false

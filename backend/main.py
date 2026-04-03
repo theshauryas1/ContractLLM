@@ -13,6 +13,12 @@ from backend.utils.config import get_settings
 settings = get_settings()
 
 
+def _parse_cors_origins(raw: str) -> list[str]:
+    if raw.strip() == "*":
+        return ["*"]
+    return [item.strip() for item in raw.split(",") if item.strip()]
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     init_db()
@@ -31,7 +37,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_parse_cors_origins(settings.cors_origins),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

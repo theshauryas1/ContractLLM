@@ -33,6 +33,7 @@ def list_trace_runs(db: Session) -> list[StoredTraceRun]:
             id=row.id,
             trace_id=row.trace_id,
             prompt_version=row.prompt_version,
+            input_payload=row.input_payload,
             results=row.results,
             created_at=row.created_at,
         )

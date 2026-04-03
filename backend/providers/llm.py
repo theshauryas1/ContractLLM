@@ -35,9 +35,10 @@ class HeuristicJudgeProvider(LLMProvider):
 
 
 class OpenAIJudgeProvider(LLMProvider):
-    def __init__(self, api_key: str, model: str) -> None:
+    def __init__(self, api_key: str, model: str, base_url: str) -> None:
         self.api_key = api_key
         self.model = model
+        self.base_url = base_url.rstrip("/")
 
     def judge_grounding(self, context: str, output: str) -> dict:
         prompt = (
@@ -46,7 +47,7 @@ class OpenAIJudgeProvider(LLMProvider):
             f"Context:\n{context}\n\nOutput:\n{output}"
         )
         response = httpx.post(
-            "https://api.openai.com/v1/chat/completions",
+            f"{self.base_url}/chat/completions",
             headers={
                 "Authorization": f"Bearer {self.api_key}",
                 "Content-Type": "application/json",
@@ -65,12 +66,12 @@ class OpenAIJudgeProvider(LLMProvider):
         payload = response.json()
         content = payload["choices"][0]["message"]["content"]
         parsed = json.loads(content)
-        parsed["provider"] = "openai"
+        parsed["provider"] = "xai"
         return parsed
 
 
 def build_llm_provider() -> LLMProvider:
     settings = get_settings()
-    if settings.llm_provider == "openai" and settings.openai_api_key:
-        return OpenAIJudgeProvider(api_key=settings.openai_api_key, model=settings.llm_model)
+    if settings.llm_provider == "xai" and settings.xai_api_key:
+        return OpenAIJudgeProvider(api_key=settings.xai_api_key, model=settings.llm_model, base_url=settings.xai_base_url)
     return HeuristicJudgeProvider()

@@ -18,6 +18,7 @@ def test_trace_ingest_and_reports_flow(client, sample_trace) -> None:
     body = ingest_response.json()
     assert body["trace_id"] == sample_trace["trace_id"]
     assert len(body["results"]["results"]) == 4
+    assert body["results"]["translated_trace"] is None
 
     runs_response = client.get("/api/reports/runs")
     assert runs_response.status_code == 200
@@ -100,3 +101,24 @@ def test_auth_is_enforced_when_enabled(client, sample_trace) -> None:
         headers={"x-api-key": "secret-key"},
     )
     assert authorized.status_code == 200
+
+
+def test_trace_ingest_returns_translated_trace_for_multilingual_input(client) -> None:
+    multilingual_trace = {
+        "trace_id": "trace-multi-001",
+        "prompt_version": "v4",
+        "input_text": "Résumez la politique de remboursement.",
+        "output": '{"résumé":"fenêtre de remboursement de 30 jours"}',
+        "context": "La politique de remboursement exige un reçu.",
+        "metadata": {"language": "fr"},
+    }
+
+    response = client.post(
+        "/api/trace",
+        json={"trace": multilingual_trace, "contract_path": "contracts/default.yaml"},
+    )
+    assert response.status_code == 200
+    translated_trace = response.json()["results"]["translated_trace"]
+    assert translated_trace is not None
+    assert "refund policy" in translated_trace["input_text"].lower()
+    assert '"summary"' in translated_trace["output"].lower()

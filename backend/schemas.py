@@ -58,6 +58,7 @@ class EvaluationBundle(BaseModel):
     results: list[EvaluationResult]
     failures: list[FailureClassification]
     suggested_repairs: list[RepairSuggestion]
+    translated_trace: TracePayload | None = None
 
 
 class TraceRunResponse(BaseModel):
@@ -79,6 +80,7 @@ class StoredTraceRun(BaseModel):
     id: int
     trace_id: str
     prompt_version: str
+    input_payload: dict[str, Any]
     results: dict[str, Any]
     created_at: datetime
 

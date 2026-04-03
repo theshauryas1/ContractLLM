@@ -20,13 +20,14 @@ class LexicalEmbeddingProvider(EmbeddingProvider):
 
 
 class OpenAIEmbeddingProvider(EmbeddingProvider):
-    def __init__(self, api_key: str, model: str) -> None:
+    def __init__(self, api_key: str, model: str, base_url: str) -> None:
         self.api_key = api_key
         self.model = model
+        self.base_url = base_url.rstrip("/")
 
     def embed(self, text: str) -> list[float]:
         response = httpx.post(
-            "https://api.openai.com/v1/embeddings",
+            f"{self.base_url}/embeddings",
             headers={
                 "Authorization": f"Bearer {self.api_key}",
                 "Content-Type": "application/json",
@@ -41,6 +42,10 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
 
 def build_embedding_provider() -> EmbeddingProvider:
     settings = get_settings()
-    if settings.embedding_provider == "openai" and settings.openai_api_key:
-        return OpenAIEmbeddingProvider(api_key=settings.openai_api_key, model=settings.embedding_model)
+    if settings.embedding_provider == "xai" and settings.xai_api_key:
+        return OpenAIEmbeddingProvider(
+            api_key=settings.xai_api_key,
+            model=settings.embedding_model,
+            base_url=settings.xai_base_url,
+        )
     return LexicalEmbeddingProvider()

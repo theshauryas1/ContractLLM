@@ -47,6 +47,7 @@ class EvaluationOrchestrator:
             results=results,
             failures=failure_summary,
             suggested_repairs=suggested_repairs,
+            translated_trace=normalized_trace if source_language != "en" else None,
         )
 
     def _evaluate_contract(self, trace: TracePayload, contract: ContractDefinition) -> EvaluationResult:

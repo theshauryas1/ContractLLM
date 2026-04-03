@@ -9,7 +9,11 @@ from backend.utils.config import get_settings
 
 
 settings = get_settings()
-engine = create_engine(settings.database_url, future=True)
+engine_kwargs = {"future": True, "pool_pre_ping": True}
+if settings.database_url.startswith("sqlite"):
+    engine_kwargs["connect_args"] = {"check_same_thread": False}
+
+engine = create_engine(settings.database_url, **engine_kwargs)
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 Base = declarative_base()
 
