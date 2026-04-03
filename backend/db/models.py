@@ -42,10 +42,20 @@ def can_use_pgvector() -> bool:
     return is_postgres() and settings.vector_db == "pgvector" and PGVECTOR_AVAILABLE
 
 
+def _register_pgvector_connection(dbapi_connection) -> bool:
+    if not can_use_pgvector():
+        return False
+    try:
+        register_vector(dbapi_connection)
+        return True
+    except Exception:
+        return False
+
+
 if can_use_pgvector():
     @event.listens_for(engine, "connect")
     def register_pgvector(dbapi_connection, _) -> None:
-        register_vector(dbapi_connection)
+        _register_pgvector_connection(dbapi_connection)
 
 
 EmbeddingVectorType = Vector(settings.embedding_dimensions) if can_use_pgvector() else JSON
@@ -112,6 +122,7 @@ def init_db() -> None:
     if can_use_pgvector():
         with engine.begin() as connection:
             connection.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+            _register_pgvector_connection(connection.connection.driver_connection)
     Base.metadata.create_all(bind=engine)
     _ensure_pgvector_index()
 
