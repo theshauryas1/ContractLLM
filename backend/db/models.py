@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Generator
 
-from sqlalchemy import JSON, Column, DateTime, Integer, String, UniqueConstraint, create_engine, event, func, text
+from sqlalchemy import JSON, Column, DateTime, Integer, LargeBinary, String, UniqueConstraint, create_engine, event, func, text
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
 from backend.utils.config import get_settings
@@ -13,7 +13,13 @@ engine_kwargs = {"future": True, "pool_pre_ping": True}
 if settings.database_url.startswith("sqlite"):
     engine_kwargs["connect_args"] = {"check_same_thread": False}
 
-engine = create_engine(settings.database_url, **engine_kwargs)
+db_url = settings.database_url
+if db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql+psycopg://", 1)
+elif db_url.startswith("postgresql://"):
+    db_url = db_url.replace("postgresql://", "postgresql+psycopg://", 1)
+
+engine = create_engine(db_url, **engine_kwargs)
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 Base = declarative_base()
 
@@ -84,6 +90,21 @@ class KnowledgeChunk(Base):
     normalized_content = Column(String, nullable=False)
     embedding = Column(EmbeddingVectorType, nullable=False)
     chunk_metadata = Column("metadata", JSON, nullable=False, default=dict)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class DocumentAsset(Base):
+    __tablename__ = "document_assets"
+
+    id = Column(Integer, primary_key=True, index=True)
+    kind = Column(String, index=True, nullable=False)
+    filename = Column(String, nullable=False)
+    content_type = Column(String, nullable=False, default="application/octet-stream")
+    size_bytes = Column(Integer, nullable=False, default=0)
+    content_hash = Column(String, index=True, nullable=False)
+    file_bytes = Column(LargeBinary, nullable=False)
+    extracted_text = Column(String, nullable=False, default="")
+    source_language = Column(String, nullable=False, default="unknown")
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
