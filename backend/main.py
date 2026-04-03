@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api.analysis import router as analysis_router
 from backend.api.dashboard import router as dashboard_router
+from backend.api.documents import router as documents_router
 from backend.api.feedback import router as feedback_router
 from backend.db.models import init_db
 from backend.utils.config import get_settings
@@ -44,6 +45,7 @@ app.add_middleware(
 )
 app.include_router(analysis_router, prefix="/api")
 app.include_router(dashboard_router, prefix="/api")
+app.include_router(documents_router, prefix="/api")
 app.include_router(feedback_router, prefix="/api")
 
 

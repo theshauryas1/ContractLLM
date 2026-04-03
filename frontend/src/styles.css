@@ -163,6 +163,13 @@ textarea {
   gap: 16px;
 }
 
+.auth-form {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: center;
+}
+
 .field {
   display: grid;
   gap: 8px;
@@ -175,6 +182,7 @@ textarea {
 .field input,
 .field select,
 .field textarea,
+.auth-form input,
 .feedback-form input,
 .feedback-form select {
   width: 100%;
@@ -215,7 +223,8 @@ textarea {
 
 .recent-analysis-list,
 .risk-grid,
-.matrix-grid {
+.matrix-grid,
+.document-library {
   display: grid;
   gap: 14px;
   margin-top: 18px;
@@ -259,6 +268,33 @@ textarea {
   margin-top: 14px;
 }
 
+.document-picker {
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(23, 32, 36, 0.04);
+}
+
+.document-picker-row,
+.document-picker-column {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.document-picker-row {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+}
+
+.document-card {
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(23, 32, 36, 0.05);
+}
+
+.multi-select {
+  min-height: 120px;
+}
+
 .risk-card h3,
 .matrix-card h3 {
   margin: 10px 0;
@@ -279,7 +315,9 @@ textarea {
 
 @media (max-width: 880px) {
   .analysis-form,
-  .feedback-form {
+  .feedback-form,
+  .auth-form,
+  .document-picker-row {
     grid-template-columns: 1fr;
   }
 }

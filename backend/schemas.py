@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 RequirementCategory = Literal["eligibility", "technical", "financial", "legal", "operational"]
 ComplianceStatus = Literal["full", "partial", "missing"]
 RiskSeverity = Literal["low", "medium", "high", "critical"]
+DocumentKind = Literal["tender", "company", "knowledge_base"]
 
 
 class TranslationBundle(BaseModel):
@@ -22,13 +23,20 @@ class KnowledgeDocument(BaseModel):
     content: str
 
 
+class StoredKnowledgeDocument(KnowledgeDocument):
+    document_id: int
+
+
 class TenderAnalysisRequest(BaseModel):
     tender_title: str = "Untitled Tender"
     tender_text: str = ""
     tender_document_base64: str | None = None
+    tender_document_id: int | None = None
     company_profile_text: str = ""
     company_document_base64: str | None = None
+    company_document_id: int | None = None
     kb_documents: list[KnowledgeDocument] = Field(default_factory=list)
+    knowledge_document_ids: list[int] = Field(default_factory=list)
     target_language: str = "auto"
     top_k: int = 3
 
@@ -161,3 +169,18 @@ class FeedbackRecord(BaseModel):
 
 class FeedbackListResponse(BaseModel):
     items: list[FeedbackRecord]
+
+
+class DocumentUploadResponse(BaseModel):
+    id: int
+    filename: str
+    kind: DocumentKind
+    content_type: str
+    size_bytes: int
+    extracted_text_preview: str
+    source_language: str
+    created_at: datetime
+
+
+class DocumentListResponse(BaseModel):
+    items: list[DocumentUploadResponse]

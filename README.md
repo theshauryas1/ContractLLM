@@ -72,6 +72,9 @@ python -m pytest -q
 - `POST /api/analyze`
 - `GET /api/analyses`
 - `GET /api/analyses/{analysis_id}`
+- `POST /api/documents`
+- `GET /api/documents`
+- `GET /api/documents/{document_id}/download`
 - `GET /api/overview`
 - `POST /api/feedback`
 - `GET /api/feedback`
@@ -160,4 +163,6 @@ Deployment scaffolding:
 - When `XAI_API_KEY` is configured, the project uses xAI structured outputs for per-requirement compliance reasoning.
 - When `DATABASE_URL` points to Neon/Postgres, the app enables the `vector` extension and stores knowledge embeddings in `pgvector`.
 - `EMBEDDING_DIMENSIONS=12` matches the built-in multilingual vector fallback. If you switch to a hosted embedding model, set this to that model's embedding size.
+- Uploaded tender, company, and knowledge PDFs are stored in the database and can be reused across analyses.
+- The frontend supports browser-stored API keys and sends them as `x-api-key` on all backend calls.
 - Feedback is stored and reused as a correction signal for similar future requirements.

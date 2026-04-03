@@ -1,22 +1,35 @@
 import { useEffect, useState } from "react";
-import { fetchAnalyses, fetchAnalysis, fetchOverview, submitAnalysis, submitFeedback } from "../api";
+import {
+  fetchAnalyses,
+  fetchAnalysis,
+  fetchDocuments,
+  fetchOverview,
+  submitAnalysis,
+  submitFeedback,
+  uploadDocument
+} from "../api";
 import AnalysisForm from "../components/AnalysisForm";
+import AuthPanel from "../components/AuthPanel";
 import ComplianceMatrix from "../components/ComplianceMatrix";
+import DocumentLibrary from "../components/DocumentLibrary";
 import OverviewPanel from "../components/OverviewPanel";
 import RiskPanel from "../components/RiskPanel";
 
 export default function Dashboard() {
   const [overview, setOverview] = useState(null);
   const [analyses, setAnalyses] = useState([]);
+  const [documents, setDocuments] = useState([]);
   const [currentAnalysis, setCurrentAnalysis] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [uploadingKind, setUploadingKind] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
   async function loadDashboard() {
-    const [overviewData, analysesData] = await Promise.all([fetchOverview(), fetchAnalyses()]);
+    const [overviewData, analysesData, documentsData] = await Promise.all([fetchOverview(), fetchAnalyses(), fetchDocuments()]);
     setOverview(overviewData);
     setAnalyses(analysesData.analyses);
+    setDocuments(documentsData.items);
   }
 
   useEffect(() => {
@@ -79,6 +92,23 @@ export default function Dashboard() {
     }
   }
 
+  async function handleUploadDocument({ file, kind }) {
+    setUploadingKind(kind);
+    setError("");
+    setMessage("");
+    try {
+      const uploaded = await uploadDocument({ file, kind });
+      await loadDashboard();
+      setMessage(`${uploaded.filename} uploaded and stored.`);
+      return uploaded;
+    } catch (uploadError) {
+      setError(uploadError.message);
+      throw uploadError;
+    } finally {
+      setUploadingKind("");
+    }
+  }
+
   return (
     <main className="layout">
       <section className="hero">
@@ -90,8 +120,16 @@ export default function Dashboard() {
         </p>
       </section>
 
+      <AuthPanel onSaved={loadDashboard} />
       <OverviewPanel overview={overview} analyses={analyses} onSelectAnalysis={handleSelectAnalysis} />
-      <AnalysisForm onSubmit={handleSubmit} loading={loading} />
+      <AnalysisForm
+        documents={documents}
+        onSubmit={handleSubmit}
+        onUploadDocument={handleUploadDocument}
+        loading={loading}
+        uploadingKind={uploadingKind}
+      />
+      <DocumentLibrary documents={documents} />
 
       {message ? (
         <section className="panel panel-message">

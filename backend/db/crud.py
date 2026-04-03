@@ -5,15 +5,19 @@ import re
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
-from backend.db.models import AnalysisRun, FeedbackEntry
+from backend.db.models import AnalysisRun, DocumentAsset, FeedbackEntry
 from backend.schemas import (
     AnalysisListResponse,
     AnalysisSummary,
     DashboardOverview,
+    DocumentListResponse,
+    DocumentUploadResponse,
     FeedbackExample,
     FeedbackListResponse,
     FeedbackRecord,
     FeedbackRequest,
+    KnowledgeDocument,
+    StoredKnowledgeDocument,
     TenderAnalysisResponse,
 )
 from backend.utils.config import get_settings
@@ -59,6 +63,77 @@ def get_analysis_run(db: Session, analysis_id: str) -> TenderAnalysisResponse | 
     if row is None:
         return None
     return TenderAnalysisResponse.model_validate(row.output_payload)
+
+
+def create_document_asset(
+    db: Session,
+    *,
+    kind: str,
+    filename: str,
+    content_type: str,
+    size_bytes: int,
+    content_hash: str,
+    file_bytes: bytes,
+    extracted_text: str,
+    source_language: str,
+) -> DocumentUploadResponse:
+    row = DocumentAsset(
+        kind=kind,
+        filename=filename,
+        content_type=content_type,
+        size_bytes=size_bytes,
+        content_hash=content_hash,
+        file_bytes=file_bytes,
+        extracted_text=extracted_text,
+        source_language=source_language,
+    )
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    return DocumentUploadResponse(
+        id=row.id,
+        filename=row.filename,
+        kind=row.kind,
+        content_type=row.content_type,
+        size_bytes=row.size_bytes,
+        extracted_text_preview=row.extracted_text[:240],
+        source_language=row.source_language,
+        created_at=row.created_at,
+    )
+
+
+def list_document_assets(db: Session) -> DocumentListResponse:
+    rows = db.query(DocumentAsset).order_by(desc(DocumentAsset.id)).all()
+    return DocumentListResponse(
+        items=[
+            DocumentUploadResponse(
+                id=row.id,
+                filename=row.filename,
+                kind=row.kind,
+                content_type=row.content_type,
+                size_bytes=row.size_bytes,
+                extracted_text_preview=row.extracted_text[:240],
+                source_language=row.source_language,
+                created_at=row.created_at,
+            )
+            for row in rows
+        ]
+    )
+
+
+def get_document_asset(db: Session, document_id: int) -> DocumentAsset | None:
+    return db.query(DocumentAsset).filter(DocumentAsset.id == document_id).one_or_none()
+
+
+def get_stored_knowledge_documents(db: Session, document_ids: list[int]) -> list[StoredKnowledgeDocument]:
+    if not document_ids:
+        return []
+    rows = db.query(DocumentAsset).filter(DocumentAsset.id.in_(document_ids)).all()
+    return [
+        StoredKnowledgeDocument(document_id=row.id, title=row.filename, content=row.extracted_text)
+        for row in rows
+        if row.kind == "knowledge_base"
+    ]
 
 
 def create_feedback_entry(db: Session, payload: FeedbackRequest) -> FeedbackRecord:
