@@ -5,10 +5,10 @@ class LanguageDetector:
 
         normalized = f" {text.lower()} "
         language_markers = {
-            "fr": [" le ", " la ", " les ", " des ", " une ", " résumez ", " politique ", " remboursement "],
-            "de": [" der ", " die ", " und ", " sie ", " zusammenfassen ", " richtlinie ", " rückerstattung "],
-            "es": [" el ", " la ", " los ", " las ", " una ", " resume ", " politica ", " reembolso "],
-            "nl": [" de ", " het ", " een ", " samenvatten ", " beleid ", " terugbetaling "],
+            "fr": [" le ", " la ", " les ", " des ", " une ", " politique ", " remboursement ", " conformite "],
+            "de": [" der ", " die ", " und ", " sie ", " richtlinie ", " zertifizierung ", " angebot "],
+            "es": [" el ", " la ", " los ", " las ", " una ", " politica ", " reembolso ", " cumplimiento "],
+            "nl": [" de ", " het ", " een ", " beleid ", " terugbetaling ", " inschrijving "],
         }
         for language, markers in language_markers.items():
             if any(marker in normalized for marker in markers):

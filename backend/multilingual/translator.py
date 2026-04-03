@@ -13,39 +13,52 @@ class Translator:
     SUPPORTED_LANGUAGES = {"fr", "de", "es", "nl", "en"}
     PHRASE_MAP = {
         "fr": [
-            ("résumez la politique", "summarize the policy"),
-            ("résumez la politique de remboursement", "summarize the refund policy"),
-            ("fenêtre de remboursement de 30 jours", "30 day refund window"),
-            ("reçu requis", "receipt required"),
+            ("certification iso 9001", "iso 9001 certification"),
+            ("certification requise", "certification required"),
             ("politique de remboursement", "refund policy"),
-            ("résumé", "summary"),
+            ("chiffre d'affaires", "turnover"),
+            ("assurance responsabilite", "liability insurance"),
+            ("preuve d'experience", "evidence of experience"),
+            ("enregistrement", "registration"),
+            ("obligatoire", "mandatory"),
+            ("soumettre", "submit"),
+            ("conformite", "compliance"),
+            ("resume", "summary"),
         ],
         "de": [
-            ("zusammenfassen sie die richtlinie", "summarize the policy"),
-            ("zusammenfassen sie die rückerstattungsrichtlinie", "summarize the refund policy"),
-            ("30 tage rückerstattungsfrist", "30 day refund window"),
-            ("beleg erforderlich", "receipt required"),
-            ("rückerstattungsrichtlinie", "refund policy"),
+            ("iso 9001 zertifizierung", "iso 9001 certification"),
+            ("zertifizierung erforderlich", "certification required"),
+            ("jahresumsatz", "turnover"),
+            ("haftpflichtversicherung", "liability insurance"),
+            ("erfahrungsnachweis", "evidence of experience"),
+            ("registrierung", "registration"),
+            ("verpflichtend", "mandatory"),
+            ("einreichen", "submit"),
+            ("compliance", "compliance"),
             ("zusammenfassung", "summary"),
         ],
         "es": [
-            ("resume la politica", "summarize the policy"),
-            ("resume la política", "summarize the policy"),
-            ("resume la politica de reembolso", "summarize the refund policy"),
-            ("resume la política de reembolso", "summarize the refund policy"),
-            ("periodo de reembolso de 30 dias", "30 day refund window"),
-            ("periodo de reembolso de 30 días", "30 day refund window"),
-            ("recibo requerido", "receipt required"),
-            ("politica de reembolso", "refund policy"),
-            ("política de reembolso", "refund policy"),
+            ("certificacion iso 9001", "iso 9001 certification"),
+            ("certificacion requerida", "certification required"),
+            ("facturacion anual", "turnover"),
+            ("seguro de responsabilidad", "liability insurance"),
+            ("prueba de experiencia", "evidence of experience"),
+            ("registro", "registration"),
+            ("obligatorio", "mandatory"),
+            ("presentar", "submit"),
+            ("cumplimiento", "compliance"),
             ("resumen", "summary"),
         ],
         "nl": [
-            ("vat het beleid samen", "summarize the policy"),
-            ("vat het terugbetalingsbeleid samen", "summarize the refund policy"),
-            ("terugbetalingsperiode van 30 dagen", "30 day refund window"),
-            ("bon vereist", "receipt required"),
-            ("terugbetalingsbeleid", "refund policy"),
+            ("iso 9001 certificering", "iso 9001 certification"),
+            ("certificering vereist", "certification required"),
+            ("jaaromzet", "turnover"),
+            ("aansprakelijkheidsverzekering", "liability insurance"),
+            ("bewijs van ervaring", "evidence of experience"),
+            ("registratie", "registration"),
+            ("verplicht", "mandatory"),
+            ("indienen", "submit"),
+            ("naleving", "compliance"),
             ("samenvatting", "summary"),
         ],
     }
@@ -76,13 +89,13 @@ class Translator:
 
     def _translate(self, text: str, source_language: str, target_language: str) -> str:
         if self.settings.translation_provider == "xai" and self.settings.xai_api_key:
-            return self._translate_with_openai(text, source_language, target_language)
+            return self._translate_with_xai(text, source_language, target_language)
         return self._translate_with_rules(text, source_language, target_language)
 
-    def _translate_with_openai(self, text: str, source_language: str, target_language: str) -> str:
+    def _translate_with_xai(self, text: str, source_language: str, target_language: str) -> str:
         prompt = (
-            "Translate the text exactly and preserve JSON structure, field names when semantically translatable, "
-            "numbers, and factual meaning. Return only the translation as plain text.\n"
+            "Translate the text precisely while preserving structure, numbers, and factual meaning. "
+            "Return only the translated text.\n"
             f"Source language: {source_language}\n"
             f"Target language: {target_language}\n"
             f"Text:\n{text}"
@@ -96,7 +109,7 @@ class Translator:
             json={
                 "model": self.settings.translation_model,
                 "messages": [
-                    {"role": "system", "content": "You are a precise translation engine."},
+                    {"role": "system", "content": "You are a precise multilingual translation engine."},
                     {"role": "user", "content": prompt},
                 ],
             },

@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: contract-llm-api
+    name: tender-compliance-engine
     env: docker
     plan: free
     dockerfilePath: ./Dockerfile
@@ -13,10 +13,30 @@ services:
         value: true
       - key: LLM_PROVIDER
         value: xai
+      - key: LLM_MODEL
+        value: grok-4.20-reasoning
       - key: TRANSLATION_PROVIDER
         value: xai
+      - key: TRANSLATION_MODEL
+        value: grok-4.20-reasoning
       - key: EMBEDDING_PROVIDER
-        value: lexical
+        value: multilingual_vector
+      - key: EMBEDDING_DIMENSIONS
+        value: 12
+      - key: VECTOR_DB
+        value: pgvector
+      - key: MULTILINGUAL_EMBEDDINGS
+        value: true
+      - key: LANGUAGE_MODE
+        value: auto
+      - key: STRICT_LANGUAGE_MATCH
+        value: true
+      - key: ENABLE_FEEDBACK_LOOP
+        value: true
+      - key: FEEDBACK_STORE
+        value: postgres
+      - key: CONFIDENCE_THRESHOLD
+        value: 0.75
       - key: DATABASE_URL
         sync: false
       - key: XAI_API_KEY

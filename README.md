@@ -1,16 +1,46 @@
-# LLM Contract Eval System
+# Tender Compliance Engine
 
-Contract-driven LLM testing & validation platform with failure diagnostics, regression tracking, multilingual translation, and optional RAG grounding.
+Agentic compliance reasoning system for multilingual tenders and RFPs.
 
-## What this builds
+This project is built for the workflow that matters in procurement:
 
-- Contract engine driven by YAML definitions
-- Evaluation pipeline for structural, pattern, semantic, and RAG-grounding checks
-- Failure taxonomy with severity and rationale
-- Auto-repair suggestion loop for failed contracts
-- FastAPI endpoints for trace ingestion, contracts, and reports
-- Neon/Postgres-friendly storage layer with SQLite default for local development
-- React dashboard shell and Typer CLI
+1. Parse a tender or tender PDF
+2. Extract structured requirements
+3. Retrieve grounded company evidence with multilingual-friendly matching
+4. Classify each requirement as `full`, `partial`, or `missing`
+5. Flag legal, eligibility, and scoring risks
+6. Store reviewer feedback so later analyses improve
+
+## Core product output
+
+The main output is a compliance matrix, not a draft proposal.
+
+Each requirement includes:
+
+- status
+- reasoning
+- retrieved evidence
+- confidence
+- recommended action
+- risk flags
+
+## Architecture
+
+Backend agents:
+
+- `ParserAgent`: accepts pasted text or base64 PDF payloads
+- `ExtractorAgent`: identifies requirements and categories
+- `RAGAgent`: retrieves supporting company evidence and KB notes
+- `ComplianceAgent`: decides `full`, `partial`, or `missing`
+- `RiskAgent`: flags disqualification and scoring risks
+
+Supporting systems:
+
+- multilingual detection and translation utilities
+- feedback loop stored in Postgres/SQLite
+- scoped knowledge chunk storage with `pgvector` support on Neon/Postgres
+- xAI structured-output reasoning with heuristic fallback
+- Render + Neon + Vercel deployment setup
 
 ## Quick start
 
@@ -23,8 +53,6 @@ pip install -r requirements.txt
 uvicorn backend.main:app --reload
 ```
 
-Copy `.env.example` to `.env` and set provider credentials if you want hosted Grok/xAI judging or translation.
-
 ### Frontend
 
 ```bash
@@ -33,68 +61,103 @@ npm install
 npm run dev
 ```
 
-### CLI
+### Tests
 
 ```bash
-python cli/llmtest.py run tests/sample_traces.json
+python -m pytest -q
 ```
 
-## Production-oriented additions
+## Main API endpoints
 
-- Optional API-key auth on all mutable/reporting API endpoints
-- Provider abstraction for semantic judging and embeddings with local fallback
-- Docker, Render, Neon, and Vercel deployment scaffolding
-- Environment-based runtime configuration for providers, DB, and CORS
+- `POST /api/analyze`
+- `GET /api/analyses`
+- `GET /api/analyses/{analysis_id}`
+- `GET /api/overview`
+- `POST /api/feedback`
+- `GET /api/feedback`
 
-## Provider modes
+Example analysis request:
 
-- `LLM_PROVIDER=heuristic`: local grounding judge without external API calls
-- `LLM_PROVIDER=xai`: hosted semantic judge using Grok/xAI when `XAI_API_KEY` is set
-- `TRANSLATION_PROVIDER=heuristic`: local phrase-based translation fallback for `fr`, `de`, `es`, and `nl`
-- `TRANSLATION_PROVIDER=xai`: hosted translation using Grok/xAI when `XAI_API_KEY` is set
-- `EMBEDDING_PROVIDER=lexical`: local ranking for RAG evidence
-- `EMBEDDING_PROVIDER=xai`: hosted embeddings if you choose an xAI-compatible embedding model
+```json
+{
+  "tender_title": "Municipal Services Tender",
+  "tender_text": "The bidder must provide ISO 9001 certification.",
+  "company_profile_text": "Our company holds ISO 9001 certification.",
+  "target_language": "auto",
+  "kb_documents": [
+    {
+      "title": "Capability Notes",
+      "content": "We support public-sector clients."
+    }
+  ]
+}
+```
 
-## Deploy on Render + Neon + Vercel
+## Environment variables
 
-### Backend on Render
+Important backend values:
 
-Use [render.yaml](/abs/path/c:/ContractLLM/render.yaml) or create a Render Web Service from this repo.
+```env
+ENVIRONMENT=production
+DATABASE_URL=your_neon_database_url
+API_KEY=your_backend_secret
+REQUIRE_AUTH=true
 
-Set these environment variables on Render:
+LLM_PROVIDER=xai
+LLM_MODEL=grok-4.20-reasoning
+XAI_API_KEY=your_xai_key
+XAI_BASE_URL=https://api.x.ai/v1
 
-- `DATABASE_URL`: your Neon pooled Postgres connection string
-- `XAI_API_KEY`: your Grok/xAI API key
-- `API_KEY`: shared backend API key for protected routes
-- `BACKEND_CORS_ORIGINS`: your Vercel frontend URL, for example `https://your-app.vercel.app`
-- `LLM_PROVIDER=xai`
-- `TRANSLATION_PROVIDER=xai`
-- `EMBEDDING_PROVIDER=lexical`
-- `REQUIRE_AUTH=true`
+TRANSLATION_PROVIDER=xai
+TRANSLATION_MODEL=grok-4.20-reasoning
 
-### Database on Neon
+EMBEDDING_PROVIDER=multilingual_vector
+EMBEDDING_MODEL=text-embedding-3-small
+EMBEDDING_DIMENSIONS=12
+VECTOR_DB=pgvector
+MULTILINGUAL_EMBEDDINGS=true
 
-Create a Neon project and copy its connection string into Render as `DATABASE_URL`.
-This app uses SQLAlchemy and `psycopg` in production, so Neon works without code changes.
+LANGUAGE_MODE=auto
+DEFAULT_OUTPUT_LANGUAGE=en
+STRICT_LANGUAGE_MATCH=true
+ALLOW_LANGUAGE_OVERRIDE=true
+LANGUAGE_RETRY_LIMIT=2
 
-### Frontend on Vercel
+ENABLE_FEEDBACK_LOOP=true
+FEEDBACK_STORE=postgres
+CONFIDENCE_THRESHOLD=0.75
 
-Deploy the `frontend` directory as a Vite project and set:
+BACKEND_CORS_ORIGINS=https://your-vercel-app.vercel.app
+```
 
-- `VITE_API_BASE=https://your-render-service.onrender.com/api`
+Frontend:
 
-If backend auth is enabled, any frontend write flows you add later will also need to send `x-api-key`.
+```env
+VITE_API_BASE=https://your-render-service.onrender.com/api
+VITE_API_KEY=
+```
 
-## Example API flow
+## Deployment
 
-1. `POST /api/trace` with a trace payload and a contract file path
-2. Evaluation orchestrator routes each contract to the right evaluator
-3. Failures are classified and repair suggestions are generated
-4. Results are stored and surfaced through `/api/reports/*`
+Backend:
 
-## Deployment readiness notes
+- Render
+- Neon Postgres
 
-1. The backend now reads CORS origins from env instead of always allowing `*`.
-2. The Docker image respects Render's `PORT`.
-3. Production Postgres connections use `psycopg` and connection health checks.
-4. The Vercel config now rewrites routes to `index.html` for SPA navigation.
+Frontend:
+
+- Vercel
+
+Deployment scaffolding:
+
+- [render.yaml](/abs/path/c:/ContractLLM/render.yaml)
+- [Dockerfile](/abs/path/c:/ContractLLM/Dockerfile)
+- [vercel.json](/abs/path/c:/ContractLLM/vercel.json)
+
+## Notes
+
+- The local fallback path is deterministic for testing and development.
+- When `XAI_API_KEY` is configured, the project uses xAI structured outputs for per-requirement compliance reasoning.
+- When `DATABASE_URL` points to Neon/Postgres, the app enables the `vector` extension and stores knowledge embeddings in `pgvector`.
+- `EMBEDDING_DIMENSIONS=12` matches the built-in multilingual vector fallback. If you switch to a hosted embedding model, set this to that model's embedding size.
+- Feedback is stored and reused as a correction signal for similar future requirements.

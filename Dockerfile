@@ -6,8 +6,6 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY backend ./backend
-COPY cli ./cli
-COPY contracts ./contracts
 COPY tests ./tests
 COPY README.md .
 COPY .env.example .env.example

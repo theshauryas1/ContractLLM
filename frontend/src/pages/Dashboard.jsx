@@ -1,65 +1,34 @@
 import { useEffect, useState } from "react";
-import { fetchOverview, fetchRegressions, fetchRuns } from "../api";
-import Contracts from "./Contracts";
-import TraceViewer from "./TraceViewer";
-import FailureCard from "../components/FailureCard";
-import PassRateChart from "../components/PassRateChart";
-
-const defaultContracts = [
-  {
-    id: "context_faithfulness",
-    type: "semantic",
-    description: "Response must stay grounded in the provided context."
-  },
-  {
-    id: "no_pii",
-    type: "pattern",
-    description: "Output must not leak personally identifiable information."
-  },
-  {
-    id: "response_format",
-    type: "structural",
-    description: "Output must be valid JSON."
-  },
-  {
-    id: "rag_support",
-    type: "rag_grounding",
-    description: "Output claims should be supported by retrieved knowledge base evidence."
-  }
-];
+import { fetchAnalyses, fetchAnalysis, fetchOverview, submitAnalysis, submitFeedback } from "../api";
+import AnalysisForm from "../components/AnalysisForm";
+import ComplianceMatrix from "../components/ComplianceMatrix";
+import OverviewPanel from "../components/OverviewPanel";
+import RiskPanel from "../components/RiskPanel";
 
 export default function Dashboard() {
   const [overview, setOverview] = useState(null);
-  const [regressions, setRegressions] = useState([]);
-  const [runs, setRuns] = useState([]);
+  const [analyses, setAnalyses] = useState([]);
+  const [currentAnalysis, setCurrentAnalysis] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+
+  async function loadDashboard() {
+    const [overviewData, analysesData] = await Promise.all([fetchOverview(), fetchAnalyses()]);
+    setOverview(overviewData);
+    setAnalyses(analysesData.analyses);
+  }
 
   useEffect(() => {
     let mounted = true;
 
     async function load() {
       try {
-        const [overviewData, regressionData, runsData] = await Promise.all([
-          fetchOverview(),
-          fetchRegressions(),
-          fetchRuns()
-        ]);
-        if (!mounted) {
-          return;
+        await loadDashboard();
+      } catch (_) {
+        if (mounted) {
+          setError("Backend not reachable yet. Start FastAPI and check your API key configuration.");
         }
-        setOverview(overviewData);
-        setRegressions(
-          regressionData.points.map((point, index) => ({
-            name: `Run ${index + 1}`,
-            passRate: point.pass_rate
-          }))
-        );
-        setRuns(runsData.runs);
-      } catch (loadError) {
-        if (!mounted) {
-          return;
-        }
-        setError("Backend not reachable yet. Start FastAPI to see live evaluation data.");
       }
     }
 
@@ -69,61 +38,75 @@ export default function Dashboard() {
     };
   }, []);
 
-  const failures =
-    overview?.recent_failures?.map((failure) => ({
-      title: failure.failure_type.replaceAll("_", " "),
-      severity: failure.severity,
-      detail: failure.rationale,
-      traceId: failure.trace_id,
-      contract: failure.contract
-    })) ?? [];
+  async function handleSubmit(payload) {
+    setLoading(true);
+    setError("");
+    setMessage("");
+    try {
+      const analysis = await submitAnalysis(payload);
+      setCurrentAnalysis(analysis);
+      await loadDashboard();
+      setMessage("Compliance matrix updated.");
+    } catch (submitError) {
+      setError(submitError.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSelectAnalysis(analysisId) {
+    setError("");
+    try {
+      const analysis = await fetchAnalysis(analysisId);
+      setCurrentAnalysis(analysis);
+    } catch (loadError) {
+      setError(loadError.message);
+    }
+  }
+
+  async function handleFeedback(payload) {
+    setError("");
+    setMessage("");
+    try {
+      await submitFeedback(payload);
+      setMessage("Feedback stored. The next similar requirement will use this signal.");
+      await loadDashboard();
+      if (currentAnalysis?.analysis_id) {
+        setCurrentAnalysis(await fetchAnalysis(currentAnalysis.analysis_id));
+      }
+    } catch (feedbackError) {
+      setError(feedbackError.message);
+    }
+  }
 
   return (
     <main className="layout">
       <section className="hero">
-        <p className="eyebrow">Contract-driven LLM validation</p>
-        <h1>Regression tracking and failure diagnostics for production prompts.</h1>
+        <p className="eyebrow">Agentic Compliance System</p>
+        <h1>Tender reasoning, grounded evidence, and auditable risk analysis.</h1>
         <p className="lede">
-          Validate traces against structural, pattern, semantic, and optional RAG-grounding contracts.
+          Parse multilingual tenders, retrieve company evidence, classify compliance gaps, and capture reviewer feedback
+          in one workflow.
         </p>
       </section>
-      <section className="stats-grid">
-        <article className="stat-card">
-          <span>Total Runs</span>
-          <strong>{overview?.total_runs ?? 0}</strong>
-        </article>
-        <article className="stat-card">
-          <span>Average Pass Rate</span>
-          <strong>{Math.round((overview?.average_pass_rate ?? 0) * 100)}%</strong>
-        </article>
-        <article className="stat-card">
-          <span>Latest Pass Rate</span>
-          <strong>{Math.round((overview?.latest_pass_rate ?? 0) * 100)}%</strong>
-        </article>
-        <article className="stat-card">
-          <span>Failing Runs</span>
-          <strong>{overview?.failing_runs ?? 0}</strong>
-        </article>
-      </section>
-      <section className="panel">
-        <div className="panel-header">
-          <h2>Pass Rate Trend</h2>
-        </div>
-        <PassRateChart data={regressions} />
-      </section>
+
+      <OverviewPanel overview={overview} analyses={analyses} onSelectAnalysis={handleSelectAnalysis} />
+      <AnalysisForm onSubmit={handleSubmit} loading={loading} />
+
+      {message ? (
+        <section className="panel panel-message">
+          <p>{message}</p>
+        </section>
+      ) : null}
+
       {error ? (
-        <section className="panel">
-          <h2>Connection</h2>
+        <section className="panel panel-error">
           <p>{error}</p>
         </section>
       ) : null}
-      <section className="grid">
-        {failures.map((failure) => (
-          <FailureCard key={failure.title} {...failure} />
-        ))}
-      </section>
-      <Contracts contracts={defaultContracts} />
-      <TraceViewer run={runs[0]} />
+
+      <ComplianceMatrix analysis={currentAnalysis} onSubmitFeedback={handleFeedback} />
+      <RiskPanel risks={currentAnalysis?.matrix?.risks ?? []} />
     </main>
   );
 }

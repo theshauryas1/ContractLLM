@@ -13,13 +13,20 @@ class EmbeddingProvider(ABC):
         raise NotImplementedError
 
 
-class LexicalEmbeddingProvider(EmbeddingProvider):
+class MultilingualVectorEmbeddingProvider(EmbeddingProvider):
     def embed(self, text: str) -> list[float]:
-        tokens = text.lower().split()
-        return [float(len(tokens)), float(len(set(tokens))), float(len(text))]
+        settings = get_settings()
+        normalized = text.lower()
+        dims = [0.0] * max(settings.embedding_dimensions, 3)
+        for index in range(max(len(normalized) - 2, 1)):
+            gram = normalized[index : index + 3]
+            bucket = sum(ord(char) for char in gram) % len(dims)
+            dims[bucket] += 1.0
+        length = max(len(normalized), 1)
+        return [round(value / length, 6) for value in dims]
 
 
-class OpenAIEmbeddingProvider(EmbeddingProvider):
+class XAIEmbeddingProvider(EmbeddingProvider):
     def __init__(self, api_key: str, model: str, base_url: str) -> None:
         self.api_key = api_key
         self.model = model
@@ -43,9 +50,9 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
 def build_embedding_provider() -> EmbeddingProvider:
     settings = get_settings()
     if settings.embedding_provider == "xai" and settings.xai_api_key:
-        return OpenAIEmbeddingProvider(
+        return XAIEmbeddingProvider(
             api_key=settings.xai_api_key,
             model=settings.embedding_model,
             base_url=settings.xai_base_url,
         )
-    return LexicalEmbeddingProvider()
+    return MultilingualVectorEmbeddingProvider()

@@ -1,96 +1,177 @@
 from __future__ import annotations
 
+import re
+
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
-from backend.db.models import TraceRun
-from backend.schemas import DashboardFailure, DashboardOverview, RegressionPoint, RegressionSummary, StoredTraceRun
+from backend.db.models import AnalysisRun, FeedbackEntry
+from backend.schemas import (
+    AnalysisListResponse,
+    AnalysisSummary,
+    DashboardOverview,
+    FeedbackExample,
+    FeedbackListResponse,
+    FeedbackRecord,
+    FeedbackRequest,
+    TenderAnalysisResponse,
+)
+from backend.utils.config import get_settings
 
 
-def create_trace_run(
-    db: Session,
-    trace_id: str,
-    prompt_version: str,
-    input_payload: dict,
-    results: dict,
-) -> TraceRun:
-    run = TraceRun(
-        trace_id=trace_id,
-        prompt_version=prompt_version,
-        input_payload=input_payload,
-        results=results,
+def create_analysis_run(db: Session, payload: dict, result: TenderAnalysisResponse) -> TenderAnalysisResponse:
+    row = AnalysisRun(
+        analysis_id=result.analysis_id,
+        tender_title=result.tender_title,
+        tender_language=result.tender_language,
+        output_language=result.output_language,
+        input_payload=payload,
+        output_payload=result.model_dump(mode="json"),
     )
-    db.add(run)
+    db.add(row)
     db.commit()
-    db.refresh(run)
-    return run
+    db.refresh(row)
+    stored = result.model_copy(update={"created_at": row.created_at})
+    row.output_payload = stored.model_dump(mode="json")
+    db.commit()
+    return stored
 
 
-def list_trace_runs(db: Session) -> list[StoredTraceRun]:
-    rows = db.query(TraceRun).order_by(desc(TraceRun.id)).all()
-    return [
-        StoredTraceRun(
-            id=row.id,
-            trace_id=row.trace_id,
-            prompt_version=row.prompt_version,
-            input_payload=row.input_payload,
-            results=row.results,
+def list_analysis_runs(db: Session) -> AnalysisListResponse:
+    rows = db.query(AnalysisRun).order_by(desc(AnalysisRun.id)).all()
+    analyses = [
+        AnalysisSummary(
+            analysis_id=row.analysis_id,
+            tender_title=row.tender_title,
+            tender_language=row.tender_language,
+            output_language=row.output_language,
+            overall_risk=row.output_payload["matrix"]["summary"]["overall_risk"],
+            missing_count=row.output_payload["matrix"]["summary"]["missing_count"],
             created_at=row.created_at,
         )
         for row in rows
     ]
+    return AnalysisListResponse(analyses=analyses)
 
 
-def summarize_regressions(db: Session) -> RegressionSummary:
-    rows = db.query(TraceRun).order_by(TraceRun.created_at.asc()).all()
-    points = [
-        RegressionPoint(
-            run_id=row.id,
-            trace_id=row.trace_id,
-            pass_rate=row.results.get("pass_rate", 0.0),
+def get_analysis_run(db: Session, analysis_id: str) -> TenderAnalysisResponse | None:
+    row = db.query(AnalysisRun).filter(AnalysisRun.analysis_id == analysis_id).one_or_none()
+    if row is None:
+        return None
+    return TenderAnalysisResponse.model_validate(row.output_payload)
+
+
+def create_feedback_entry(db: Session, payload: FeedbackRequest) -> FeedbackRecord:
+    row = FeedbackEntry(
+        analysis_id=payload.analysis_id,
+        requirement_id=payload.requirement_id,
+        requirement_text=payload.requirement_text,
+        original_status=payload.original_status,
+        corrected_status=payload.corrected_status,
+        comments=payload.comments,
+    )
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    return FeedbackRecord(
+        id=row.id,
+        analysis_id=row.analysis_id,
+        requirement_id=row.requirement_id,
+        requirement_text=row.requirement_text,
+        original_status=row.original_status,
+        corrected_status=row.corrected_status,
+        comments=row.comments,
+        created_at=row.created_at,
+    )
+
+
+def list_feedback_entries(db: Session) -> FeedbackListResponse:
+    rows = db.query(FeedbackEntry).order_by(desc(FeedbackEntry.id)).all()
+    return FeedbackListResponse(
+        items=[
+            FeedbackRecord(
+                id=row.id,
+                analysis_id=row.analysis_id,
+                requirement_id=row.requirement_id,
+                requirement_text=row.requirement_text,
+                original_status=row.original_status,
+                corrected_status=row.corrected_status,
+                comments=row.comments,
+                created_at=row.created_at,
+            )
+            for row in rows
+        ]
+    )
+
+
+def find_feedback_examples(db: Session | None, requirement_text: str) -> list[FeedbackExample]:
+    settings = get_settings()
+    if db is None or not settings.enable_feedback_loop:
+        return []
+
+    rows = db.query(FeedbackEntry).order_by(desc(FeedbackEntry.id)).limit(25).all()
+    ranked: list[tuple[float, FeedbackExample]] = []
+    for row in rows:
+        similarity = _text_similarity(requirement_text, row.requirement_text)
+        if similarity < 0.3:
+            continue
+        ranked.append(
+            (
+                similarity,
+                FeedbackExample(
+                    corrected_status=row.corrected_status,
+                    comments=row.comments,
+                    similarity=round(similarity, 3),
+                ),
+            )
         )
-        for row in rows
-    ]
-    latest = points[-1].pass_rate if points else 0.0
-    previous = points[-2].pass_rate if len(points) > 1 else latest
-    delta = round(latest - previous, 3)
-    return RegressionSummary(total_runs=len(points), delta=delta, points=points)
+    ranked.sort(key=lambda item: item[0], reverse=True)
+    return [example for _, example in ranked[:3]]
 
 
 def build_dashboard_overview(db: Session) -> DashboardOverview:
-    rows = db.query(TraceRun).order_by(desc(TraceRun.id)).all()
-    total_runs = len(rows)
-    pass_rates = [row.results.get("pass_rate", 0.0) for row in rows]
-    average_pass_rate = round(sum(pass_rates) / max(total_runs, 1), 3)
-    latest_pass_rate = pass_rates[0] if pass_rates else 0.0
-    failing_runs = sum(1 for row in rows if row.results.get("failures"))
-    tracked_prompt_versions = sorted({row.prompt_version for row in rows})
+    analysis_rows = db.query(AnalysisRun).order_by(desc(AnalysisRun.id)).all()
+    feedback_rows = db.query(FeedbackEntry).order_by(desc(FeedbackEntry.id)).all()
 
-    recent_failures: list[DashboardFailure] = []
-    for row in rows:
-        for result in row.results.get("results", []):
-            failure = result.get("failure")
-            if not failure:
-                continue
-            recent_failures.append(
-                DashboardFailure(
-                    trace_id=row.trace_id,
-                    contract=result["contract"],
-                    failure_type=failure["failure_type"],
-                    severity=failure["severity"],
-                    rationale=failure["rationale"],
-                )
-            )
-            if len(recent_failures) >= 8:
-                break
-        if len(recent_failures) >= 8:
-            break
+    total_analyses = len(analysis_rows)
+    total_requirements = sum(len(row.output_payload["matrix"]["rows"]) for row in analysis_rows)
+    high_risk_analyses = sum(
+        1 for row in analysis_rows if row.output_payload["matrix"]["summary"]["overall_risk"] in {"high", "critical"}
+    )
+    confidence_values = [
+        decision["confidence"]
+        for row in analysis_rows
+        for decision in row.output_payload["matrix"]["rows"]
+    ]
+    languages = sorted({row.tender_language for row in analysis_rows})
+
+    recent_analyses = [
+        AnalysisSummary(
+            analysis_id=row.analysis_id,
+            tender_title=row.tender_title,
+            tender_language=row.tender_language,
+            output_language=row.output_language,
+            overall_risk=row.output_payload["matrix"]["summary"]["overall_risk"],
+            missing_count=row.output_payload["matrix"]["summary"]["missing_count"],
+            created_at=row.created_at,
+        )
+        for row in analysis_rows[:6]
+    ]
 
     return DashboardOverview(
-        total_runs=total_runs,
-        average_pass_rate=average_pass_rate,
-        latest_pass_rate=latest_pass_rate,
-        failing_runs=failing_runs,
-        tracked_prompt_versions=tracked_prompt_versions,
-        recent_failures=recent_failures,
+        total_analyses=total_analyses,
+        total_requirements=total_requirements,
+        high_risk_analyses=high_risk_analyses,
+        feedback_items=len(feedback_rows),
+        average_confidence=round(sum(confidence_values) / max(len(confidence_values), 1), 3),
+        languages=languages,
+        recent_analyses=recent_analyses,
     )
+
+
+def _text_similarity(left: str, right: str) -> float:
+    left_tokens = set(re.findall(r"\w+", left.lower()))
+    right_tokens = set(re.findall(r"\w+", right.lower()))
+    if not left_tokens or not right_tokens:
+        return 0.0
+    return len(left_tokens & right_tokens) / len(left_tokens | right_tokens)

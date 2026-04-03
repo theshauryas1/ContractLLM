@@ -3,10 +3,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.api.contracts import router as contracts_router
-from backend.api.generation import router as generation_router
-from backend.api.ingest import router as ingest_router
-from backend.api.reports import router as reports_router
+from backend.api.analysis import router as analysis_router
+from backend.api.dashboard import router as dashboard_router
+from backend.api.feedback import router as feedback_router
 from backend.db.models import init_db
 from backend.utils.config import get_settings
 
@@ -27,11 +26,11 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(
-    title="LLM Contract Eval System",
+    title="Tender Compliance Engine",
     version="0.1.0",
     description=(
-        "Contract-driven LLM testing & validation platform with failure diagnostics, "
-        "regression tracking, and optional multilingual + RAG grounding."
+        "Agentic compliance reasoning system for multilingual tenders, "
+        "grounded company evidence, risk analysis, and feedback-driven improvement."
     ),
     lifespan=lifespan,
 )
@@ -43,10 +42,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.include_router(ingest_router, prefix="/api")
-app.include_router(generation_router, prefix="/api")
-app.include_router(contracts_router, prefix="/api")
-app.include_router(reports_router, prefix="/api")
+app.include_router(analysis_router, prefix="/api")
+app.include_router(dashboard_router, prefix="/api")
+app.include_router(feedback_router, prefix="/api")
 
 
 @app.get("/health")

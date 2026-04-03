@@ -6,99 +6,9 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field
 
 
-ContractType = Literal["semantic", "pattern", "structural", "rag_grounding"]
-
-
-class TracePayload(BaseModel):
-    trace_id: str
-    prompt_version: str = "v1"
-    input_text: str
-    output: str
-    context: str = ""
-    metadata: dict[str, Any] = Field(default_factory=dict)
-
-
-class TraceIngestRequest(BaseModel):
-    trace: TracePayload
-    contract_path: str = "contracts/default.yaml"
-
-
-class ContractDefinition(BaseModel):
-    id: str
-    type: ContractType
-    description: str = ""
-    config: dict[str, Any] = Field(default_factory=dict)
-
-
-class FailureClassification(BaseModel):
-    failure_type: Literal["hallucination", "format_violation", "inconsistency", "instruction_drift"]
-    severity: Literal["low", "medium", "high"]
-    rationale: str
-
-
-class EvaluationResult(BaseModel):
-    contract: str
-    status: Literal["pass", "fail"]
-    confidence: float
-    reasoning_trace: str = ""
-    evidence_pointers: list[str] = Field(default_factory=list)
-    failure: FailureClassification | None = None
-
-
-class RepairSuggestion(BaseModel):
-    contract: str
-    strategy: Literal["inject_constraints", "add_context", "adjust_system_prompt"]
-    prompt_patch: str
-
-
-class EvaluationBundle(BaseModel):
-    trace_id: str
-    source_language: str = "en"
-    pass_rate: float
-    results: list[EvaluationResult]
-    failures: list[FailureClassification]
-    suggested_repairs: list[RepairSuggestion]
-    translated_trace: TracePayload | None = None
-
-
-class TraceRunResponse(BaseModel):
-    run_id: int
-    trace_id: str
-    results: EvaluationBundle
-
-
-class ContractCreateRequest(BaseModel):
-    contract_path: str = "contracts/default.yaml"
-    contract: ContractDefinition
-
-
-class ContractListResponse(BaseModel):
-    contracts: list[ContractDefinition]
-
-
-class StoredTraceRun(BaseModel):
-    id: int
-    trace_id: str
-    prompt_version: str
-    input_payload: dict[str, Any]
-    results: dict[str, Any]
-    created_at: datetime
-
-
-class TraceRunListResponse(BaseModel):
-    runs: list[StoredTraceRun]
-
-
-class RegressionPoint(BaseModel):
-    run_id: int
-    trace_id: str
-    pass_rate: float
-
-
-class RegressionSummary(BaseModel):
-    total_runs: int
-    delta: float
-    points: list[RegressionPoint]
+RequirementCategory = Literal["eligibility", "technical", "financial", "legal", "operational"]
+ComplianceStatus = Literal["full", "partial", "missing"]
+RiskSeverity = Literal["low", "medium", "high", "critical"]
 
 
 class TranslationBundle(BaseModel):
@@ -107,33 +17,147 @@ class TranslationBundle(BaseModel):
     target_language: str = "en"
 
 
-class GenerateRequest(BaseModel):
-    text: str
-    context: str = ""
+class KnowledgeDocument(BaseModel):
+    title: str
+    content: str
+
+
+class TenderAnalysisRequest(BaseModel):
+    tender_title: str = "Untitled Tender"
+    tender_text: str = ""
+    tender_document_base64: str | None = None
+    company_profile_text: str = ""
+    company_document_base64: str | None = None
+    kb_documents: list[KnowledgeDocument] = Field(default_factory=list)
     target_language: str = "auto"
+    top_k: int = 3
 
 
-class GenerateResponse(BaseModel):
-    input_language: str
-    target_language: str
-    output_language: str
-    output: dict[str, Any]
-    provider: str
-    retries: int = 0
+class ParsedDocument(BaseModel):
+    text: str
+    source_type: Literal["text", "pdf", "empty"]
+    language: str = "en"
 
 
-class DashboardFailure(BaseModel):
-    trace_id: str
-    contract: str
-    failure_type: str
-    severity: str
+class ExtractedRequirement(BaseModel):
+    id: str
+    text: str
+    category: RequirementCategory
+    category_label: str
+    mandatory: bool = True
+    evaluation_weight: float = 1.0
+
+
+class EvidenceItem(BaseModel):
+    source: str
+    snippet: str
+    score: float
+    retrieval_backend: str = "hybrid"
+
+
+class FeedbackExample(BaseModel):
+    corrected_status: ComplianceStatus
+    comments: str = ""
+    similarity: float = 0.0
+
+
+class ComplianceMatrixRow(BaseModel):
+    requirement_id: str
+    requirement_text: str
+    category: RequirementCategory
+    category_label: str
+    status: ComplianceStatus
+    status_label: str
+    reasoning: str
+    evidence: list[EvidenceItem] = Field(default_factory=list)
+    confidence: float
+    recommended_action: str
+    review_required: bool = False
+    feedback_examples: list[FeedbackExample] = Field(default_factory=list)
+    audit_trail: list[str] = Field(default_factory=list)
+
+
+class RiskFlag(BaseModel):
+    requirement_id: str
+    severity: RiskSeverity
+    title: str
     rationale: str
+    mitigation: str
+
+
+class ComplianceSummary(BaseModel):
+    full_count: int
+    partial_count: int
+    missing_count: int
+    review_required_count: int
+    overall_risk: RiskSeverity
+
+
+class ComplianceMatrix(BaseModel):
+    rows: list[ComplianceMatrixRow]
+    risks: list[RiskFlag]
+    summary: ComplianceSummary
+    executive_summary: str
+    retrieved_sources: list[str] = Field(default_factory=list)
+
+
+class TenderAnalysisResponse(BaseModel):
+    analysis_id: str
+    tender_title: str
+    tender_language: str
+    output_language: str
+    parser_source: Literal["text", "pdf", "empty"]
+    requirements: list[ExtractedRequirement]
+    matrix: ComplianceMatrix
+    provider: str
+    retrieval_backend: str = "in-memory"
+    reasoning_backend: str = "heuristic"
+    created_at: datetime | None = None
+
+
+class AnalysisSummary(BaseModel):
+    analysis_id: str
+    tender_title: str
+    tender_language: str
+    output_language: str
+    overall_risk: RiskSeverity
+    missing_count: int
+    created_at: datetime
+
+
+class AnalysisListResponse(BaseModel):
+    analyses: list[AnalysisSummary]
 
 
 class DashboardOverview(BaseModel):
-    total_runs: int
-    average_pass_rate: float
-    latest_pass_rate: float
-    failing_runs: int
-    tracked_prompt_versions: list[str]
-    recent_failures: list[DashboardFailure]
+    total_analyses: int
+    total_requirements: int
+    high_risk_analyses: int
+    feedback_items: int
+    average_confidence: float
+    languages: list[str]
+    recent_analyses: list[AnalysisSummary]
+
+
+class FeedbackRequest(BaseModel):
+    analysis_id: str
+    requirement_id: str
+    requirement_text: str
+    original_status: ComplianceStatus
+    corrected_status: ComplianceStatus
+    comments: str = ""
+
+
+class FeedbackRecord(BaseModel):
+    id: int
+    analysis_id: str
+    requirement_id: str
+    requirement_text: str
+    original_status: ComplianceStatus
+    corrected_status: ComplianceStatus
+    comments: str
+    created_at: datetime
+
+
+class FeedbackListResponse(BaseModel):
+    items: list[FeedbackRecord]
