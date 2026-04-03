@@ -9,7 +9,6 @@ import {
   uploadDocument
 } from "../api";
 import AnalysisForm from "../components/AnalysisForm";
-import AuthPanel from "../components/AuthPanel";
 import ComplianceMatrix from "../components/ComplianceMatrix";
 import DocumentLibrary from "../components/DocumentLibrary";
 import OverviewPanel from "../components/OverviewPanel";
@@ -40,7 +39,7 @@ export default function Dashboard() {
         await loadDashboard();
       } catch (_) {
         if (mounted) {
-          setError("Backend not reachable yet. Start FastAPI and check your API key configuration.");
+          setError("Backend not reachable yet. Check that the deployed frontend points to the deployed API.");
         }
       }
     }
@@ -120,7 +119,6 @@ export default function Dashboard() {
         </p>
       </section>
 
-      <AuthPanel onSaved={loadDashboard} />
       <OverviewPanel overview={overview} analyses={analyses} onSelectAnalysis={handleSelectAnalysis} />
       <AnalysisForm
         documents={documents}
