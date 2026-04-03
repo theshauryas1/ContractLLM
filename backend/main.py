@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api.contracts import router as contracts_router
+from backend.api.generation import router as generation_router
 from backend.api.ingest import router as ingest_router
 from backend.api.reports import router as reports_router
 from backend.db.models import init_db
@@ -43,6 +44,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(ingest_router, prefix="/api")
+app.include_router(generation_router, prefix="/api")
 app.include_router(contracts_router, prefix="/api")
 app.include_router(reports_router, prefix="/api")
 

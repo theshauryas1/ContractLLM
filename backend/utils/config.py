@@ -18,6 +18,11 @@ class Settings(BaseSettings):
     translation_model: str = "grok-2-1212"
     embedding_provider: str = "lexical"
     embedding_model: str = "text-embedding-3-small"
+    language_mode: str = "auto"
+    default_output_language: str = "en"
+    strict_language_match: bool = True
+    allow_language_override: bool = True
+    language_retry_limit: int = 2
     knowledge_base_path: str = "backend/rag/knowledge_base"
     cors_origins: str = Field(default="*", alias="BACKEND_CORS_ORIGINS")
 

@@ -1,5 +1,8 @@
 class LanguageDetector:
     def detect(self, text: str) -> str:
+        if any("\u0900" <= char <= "\u097F" for char in text):
+            return "hi"
+
         normalized = f" {text.lower()} "
         language_markers = {
             "fr": [" le ", " la ", " les ", " des ", " une ", " résumez ", " politique ", " remboursement "],

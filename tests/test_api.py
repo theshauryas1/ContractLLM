@@ -122,3 +122,42 @@ def test_trace_ingest_returns_translated_trace_for_multilingual_input(client) ->
     assert translated_trace is not None
     assert "refund policy" in translated_trace["input_text"].lower()
     assert '"summary"' in translated_trace["output"].lower()
+
+
+def test_generate_matches_input_language_in_auto_mode(client) -> None:
+    response = client.post(
+        "/api/generate",
+        json={"text": "Résumez la politique de remboursement.", "context": "", "target_language": "auto"},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["input_language"] == "fr"
+    assert body["target_language"] == "fr"
+    assert body["output_language"] == "fr"
+    assert body["output"]["language"] == "fr"
+
+
+def test_generate_supports_language_override(client) -> None:
+    response = client.post(
+        "/api/generate",
+        json={"text": "Summarize the refund policy.", "target_language": "de"},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["input_language"] == "en"
+    assert body["target_language"] == "de"
+    assert body["output_language"] == "de"
+
+
+def test_generate_uses_default_language_in_fixed_mode(client) -> None:
+    settings = get_settings()
+    settings.language_mode = "fixed"
+    settings.default_output_language = "en"
+    response = client.post(
+        "/api/generate",
+        json={"text": "रिफंड नीति का सारांश दें।", "target_language": "auto"},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["input_language"] == "hi"
+    assert body["target_language"] == "en"

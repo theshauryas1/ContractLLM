@@ -107,6 +107,21 @@ class TranslationBundle(BaseModel):
     target_language: str = "en"
 
 
+class GenerateRequest(BaseModel):
+    text: str
+    context: str = ""
+    target_language: str = "auto"
+
+
+class GenerateResponse(BaseModel):
+    input_language: str
+    target_language: str
+    output_language: str
+    output: dict[str, Any]
+    provider: str
+    retries: int = 0
+
+
 class DashboardFailure(BaseModel):
     trace_id: str
     contract: str
