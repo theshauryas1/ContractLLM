@@ -1,9 +1,14 @@
 const API_BASE = import.meta.env.VITE_API_BASE ?? "http://127.0.0.1:8000/api";
 
+const API_KEY = import.meta.env.VITE_API_KEY ?? "local-dev-key";
+
 function buildHeaders({ isFormData = false } = {}) {
   const headers = {};
   if (!isFormData) {
     headers["Content-Type"] = "application/json";
+  }
+  if (API_KEY) {
+    headers["x-api-key"] = API_KEY;
   }
   return headers;
 }
