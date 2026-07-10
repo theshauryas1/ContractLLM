@@ -8,11 +8,11 @@ from pathlib import Path
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from backend.db.models import KnowledgeChunk, can_use_pgvector
-from backend.multilingual.language_detector import LanguageDetector
-from backend.multilingual.translator import Translator
+from shared.db.models import KnowledgeChunk, can_use_pgvector
+from shared.multilingual.language_detector import LanguageDetector
+from shared.multilingual.translator import Translator
 from backend.providers.embeddings import build_embedding_provider
-from backend.schemas import EvidenceItem, KnowledgeDocument
+from shared.schemas import EvidenceItem, KnowledgeDocument
 from backend.utils.config import get_settings
 
 

@@ -166,3 +166,21 @@ Deployment scaffolding:
 - Uploaded tender, company, and knowledge PDFs are stored in the database and can be reused across analyses.
 - The frontend supports browser-stored API keys and sends them as `x-api-key` on all backend calls.
 - Feedback is stored and reused as a correction signal for similar future requirements.
+
+## Agentic Development & Custom Skills
+
+This repository is optimized for agentic development using **Antigravity**. It includes workspace-scoped configurations to assist AI agents in code navigation, context preservation, and codebase documentation.
+
+### Workspace Configurations
+
+All customizations are stored in the `.agents/` customization root:
+- **Workspace Rules**: Defined in [.agents/AGENTS.md](file:///d:/ContractLLM/.agents/AGENTS.md). These establish behavioral guidelines, coding principles, and context synchronization rules.
+- **Custom Skill**: Defined in [.agents/skills/contract-llm-docs/SKILL.md](file:///d:/ContractLLM/.agents/skills/contract-llm-docs/SKILL.md). This skill provides specialized instructions for documenting the core compliance agents.
+
+### Context Preservation & Documentation Workflows
+
+When working with Antigravity, developers and agents are encouraged to leverage the following capabilities:
+1. **Context Restoration**: Use the `context-management-context-restore` skill to automatically rehydrate the semantic memory and project state when resuming a development session.
+2. **Context Preservation**: Use the `context-management-context-save` skill to serialize the workspace state, architectural decisions, and current progress.
+3. **Structured Documentation**: Use the `wiki-architect` skill alongside the custom `contract-llm-docs` skill to generate structured wikis, zero-to-hero onboarding paths, and principal-level guides referencing real files in this repository.
+

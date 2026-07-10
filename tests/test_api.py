@@ -1,6 +1,6 @@
 import httpx
 
-from backend.db.models import KnowledgeChunk, SessionLocal
+from shared.db.models import KnowledgeChunk, SessionLocal
 from backend.utils.config import get_settings
 
 
@@ -109,6 +109,51 @@ def test_feedback_endpoint_records_feedback_and_updates_overview(client) -> None
 
     overview = client.get("/api/overview").json()
     assert overview["feedback_items"] == 1
+
+
+def test_document_upload_and_analysis_by_document_ids(client) -> None:
+    tender_upload = client.post(
+        "/api/documents",
+        data={"kind": "tender"},
+        files={"file": ("tender.txt", b"The bidder must provide ISO 9001 certification.", "text/plain")},
+    )
+    assert tender_upload.status_code == 200
+    tender_document_id = tender_upload.json()["id"]
+
+    company_upload = client.post(
+        "/api/documents",
+        data={"kind": "company"},
+        files={"file": ("company.txt", b"Our company holds ISO 9001 certification.", "text/plain")},
+    )
+    assert company_upload.status_code == 200
+    company_document_id = company_upload.json()["id"]
+
+    kb_upload = client.post(
+        "/api/documents",
+        data={"kind": "knowledge_base"},
+        files={"file": ("kb.txt", b"Certificate renewal completed this year.", "text/plain")},
+    )
+    assert kb_upload.status_code == 200
+    kb_document_id = kb_upload.json()["id"]
+
+    document_list = client.get("/api/documents")
+    assert document_list.status_code == 200
+    assert len(document_list.json()["items"]) == 3
+
+    analysis_response = client.post(
+        "/api/analyze",
+        json={
+            "tender_title": "Stored Document Flow",
+            "tender_document_id": tender_document_id,
+            "company_document_id": company_document_id,
+            "knowledge_document_ids": [kb_document_id],
+            "target_language": "auto",
+        },
+    )
+    assert analysis_response.status_code == 200
+    body = analysis_response.json()
+    assert body["requirements"]
+    assert body["retrieval_backend"] in {"database-fallback", "pgvector"}
 
 
 def test_analysis_persists_knowledge_chunks_without_duplicate_scope_rows(client) -> None:

@@ -15,6 +15,14 @@ class Settings(BaseSettings):
     xai_api_key: str = ""
     xai_base_url: str = "https://api.x.ai/v1"
 
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-2.5-flash"
+    gemini_base_url: str = "https://generativelanguage.googleapis.com/v1beta"
+
+    nvidia_api_key: str = ""
+    nvidia_model: str = "meta/llama-3.1-405b-instruct"
+    nvidia_base_url: str = "https://integrate.api.nvidia.com/v1"
+
     translation_provider: str = "heuristic"
     translation_model: str = "grok-4.20-reasoning"
 

@@ -11,3 +11,5 @@ psycopg[binary]==3.2.9
 pymupdf==1.26.4
 python-multipart==0.0.20
 pgvector==0.4.2
+pyjwt==2.10.1
+cryptography==44.0.1

@@ -184,3 +184,31 @@ class DocumentUploadResponse(BaseModel):
 
 class DocumentListResponse(BaseModel):
     items: list[DocumentUploadResponse]
+
+
+class UserProfileResponse(BaseModel):
+    user_id: str
+    email: str
+    full_name: str | None = None
+    preferred_language: str
+    country: str | None = None
+    state: str | None = None
+    timezone: str | None = None
+    legal_profession: str | None = None
+    industry: str | None = None
+    org_id: str | None = None
+    default_jurisdiction: str | None = None
+    preferred_ai_model: str | None = None
+    created_at: datetime
+
+
+class UserProfileUpdateRequest(BaseModel):
+    full_name: str | None = None
+    preferred_language: str | None = None
+    country: str | None = None
+    state: str | None = None
+    timezone: str | None = None
+    legal_profession: str | None = None
+    industry: str | None = None
+    default_jurisdiction: str | None = None
+    preferred_ai_model: str | None = None

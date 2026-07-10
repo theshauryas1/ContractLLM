@@ -2,15 +2,15 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from backend.compliance import TenderComplianceOrchestrator
-from backend.db.crud import (
+from shared.db.crud import (
     create_analysis_run,
     get_analysis_run,
     get_document_asset,
     get_stored_knowledge_documents,
     list_analysis_runs,
 )
-from backend.db.models import get_db
-from backend.schemas import AnalysisListResponse, KnowledgeDocument, TenderAnalysisRequest, TenderAnalysisResponse
+from shared.db.models import get_db
+from shared.schemas import AnalysisListResponse, KnowledgeDocument, TenderAnalysisRequest, TenderAnalysisResponse
 from backend.utils.security import require_api_key
 
 

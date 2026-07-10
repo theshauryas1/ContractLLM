@@ -4,10 +4,11 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, Upl
 from sqlalchemy.orm import Session
 
 from backend.compliance.parser_agent import ParserAgent
-from backend.db.crud import create_document_asset, get_document_asset, list_document_assets
-from backend.db.models import get_db
-from backend.schemas import DocumentKind, DocumentListResponse, DocumentUploadResponse
+from shared.db.crud import create_document_asset, get_document_asset, list_document_assets
+from shared.db.models import get_db
+from shared.schemas import DocumentKind, DocumentListResponse, DocumentUploadResponse
 from backend.utils.security import require_api_key
+from shared.security.guardrails import sanitize_filename
 
 
 router = APIRouter(tags=["documents"])
@@ -25,11 +26,12 @@ async def upload_document(
         raise HTTPException(status_code=400, detail="Uploaded file is empty")
 
     parser = ParserAgent()
-    parsed = parser.parse_bytes(data, file.filename or "upload.bin", file.content_type)
+    safe_filename = sanitize_filename(file.filename or "upload.bin")
+    parsed = parser.parse_bytes(data, safe_filename, file.content_type)
     return create_document_asset(
         db,
         kind=kind,
-        filename=file.filename or "upload.bin",
+        filename=safe_filename,
         content_type=file.content_type or "application/octet-stream",
         size_bytes=len(data),
         content_hash=hashlib.sha256(data).hexdigest(),

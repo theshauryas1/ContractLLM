@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from backend.schemas import RequirementCategory
+from shared.schemas import RequirementCategory
 
 
 class ClassifierAgent:

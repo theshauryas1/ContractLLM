@@ -5,8 +5,8 @@ import re
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
-from backend.db.models import AnalysisRun, DocumentAsset, FeedbackEntry
-from backend.schemas import (
+from shared.db.models import AnalysisRun, DocumentAsset, FeedbackEntry
+from shared.schemas import (
     AnalysisListResponse,
     AnalysisSummary,
     DashboardOverview,

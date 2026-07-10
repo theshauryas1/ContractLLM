@@ -5,7 +5,7 @@ import re
 
 import httpx
 
-from backend.schemas import TranslationBundle
+from shared.schemas import TranslationBundle
 from backend.utils.config import get_settings
 
 

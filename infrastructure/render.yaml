@@ -3,7 +3,7 @@ services:
     name: tender-compliance-engine
     env: docker
     plan: free
-    dockerfilePath: ./Dockerfile
+    dockerfilePath: ./docker/Dockerfile
     autoDeploy: true
     healthCheckPath: /health
     envVars:

@@ -10,9 +10,10 @@ from backend.compliance.localization import localize_summary
 from backend.compliance.parser_agent import ParserAgent
 from backend.compliance.rag_agent import RAGAgent
 from backend.compliance.risk_agent import RiskAgent
-from backend.db.crud import find_feedback_examples
-from backend.schemas import ComplianceMatrix, ComplianceSummary, TenderAnalysisRequest, TenderAnalysisResponse
+from shared.db.crud import find_feedback_examples
+from shared.schemas import ComplianceMatrix, ComplianceSummary, TenderAnalysisRequest, TenderAnalysisResponse
 from backend.utils.config import get_settings
+from shared.security.guardrails import guard_input, validate_llm_output
 
 
 class TenderComplianceOrchestrator:
@@ -27,6 +28,12 @@ class TenderComplianceOrchestrator:
         self.risk_agent = RiskAgent()
 
     def analyze(self, payload: TenderAnalysisRequest, db: Session | None = None) -> TenderAnalysisResponse:
+        # Secure Gateway: Scan inputs for prompt injections and mask PII
+        payload.tender_text = guard_input(payload.tender_text)
+        payload.company_profile_text = guard_input(payload.company_profile_text)
+        for doc in payload.kb_documents:
+            doc.content = guard_input(doc.content)
+
         tender = self.parser_agent.parse(payload.tender_text, payload.tender_document_base64)
         company = self.parser_agent.parse(payload.company_profile_text, payload.company_document_base64)
         output_language = self._resolve_output_language(payload.target_language, tender.language)
@@ -44,17 +51,19 @@ class TenderComplianceOrchestrator:
                 scopes=scopes,
             )
             feedback_examples = find_feedback_examples(db, normalized_text.get(requirement.id, requirement.text)) if db else []
-            rows.append(
-                self.compliance_agent.assess(
-                    requirement_id=requirement.id,
-                    requirement_text=requirement.text,
-                    category=requirement.category,
-                    category_label=requirement.category_label,
-                    evidence=evidence,
-                    output_language=output_language,
-                    feedback_examples=feedback_examples,
-                )
+            row = self.compliance_agent.assess(
+                requirement_id=requirement.id,
+                requirement_text=requirement.text,
+                category=requirement.category,
+                category_label=requirement.category_label,
+                evidence=evidence,
+                output_language=output_language,
+                feedback_examples=feedback_examples,
             )
+            # Secure Gateway: Scrub output fields for keys/secrets leaks
+            row.reasoning = validate_llm_output(row.reasoning)
+            row.recommended_action = validate_llm_output(row.recommended_action)
+            rows.append(row)
 
         risks, overall_risk = self.risk_agent.analyze(rows, output_language)
         full_count = sum(1 for row in rows if row.status == "full")

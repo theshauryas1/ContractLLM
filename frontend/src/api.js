@@ -69,3 +69,14 @@ export function uploadDocument({ file, kind }) {
     body: formData
   });
 }
+
+export function fetchUserProfile() {
+  return readJson("/users/me");
+}
+
+export function updateUserProfile(payload) {
+  return readJson("/users/me", {
+    method: "PUT",
+    body: JSON.stringify(payload)
+  });
+}

@@ -13,6 +13,7 @@ import ComplianceMatrix from "../components/ComplianceMatrix";
 import DocumentLibrary from "../components/DocumentLibrary";
 import OverviewPanel from "../components/OverviewPanel";
 import RiskPanel from "../components/RiskPanel";
+import UserProfilePanel from "../components/UserProfilePanel";
 
 export default function Dashboard() {
   const [overview, setOverview] = useState(null);
@@ -128,6 +129,7 @@ export default function Dashboard() {
         uploadingKind={uploadingKind}
       />
       <DocumentLibrary documents={documents} />
+      <UserProfilePanel />
 
       {message ? (
         <section className="panel panel-message">

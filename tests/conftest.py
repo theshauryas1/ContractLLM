@@ -1,7 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from backend.db.models import AnalysisRun, FeedbackEntry, KnowledgeChunk, SessionLocal, init_db
+from shared.db.models import AnalysisRun, DocumentAsset, FeedbackEntry, KnowledgeChunk, SessionLocal, User, init_db
 from backend.main import app
 from backend.utils.config import get_settings
 
@@ -32,6 +32,8 @@ def clean_db() -> None:
     init_db()
     db = SessionLocal()
     try:
+        db.query(User).delete()
+        db.query(DocumentAsset).delete()
         db.query(KnowledgeChunk).delete()
         db.query(FeedbackEntry).delete()
         db.query(AnalysisRun).delete()
@@ -43,6 +45,8 @@ def clean_db() -> None:
 
     db = SessionLocal()
     try:
+        db.query(User).delete()
+        db.query(DocumentAsset).delete()
         db.query(KnowledgeChunk).delete()
         db.query(FeedbackEntry).delete()
         db.query(AnalysisRun).delete()

@@ -4,8 +4,8 @@ import base64
 import io
 import re
 
-from backend.multilingual.language_detector import LanguageDetector
-from backend.schemas import ParsedDocument
+from shared.multilingual.language_detector import LanguageDetector
+from shared.schemas import ParsedDocument
 
 
 class ParserAgent:

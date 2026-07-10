@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from backend.db.crud import create_feedback_entry, list_feedback_entries
-from backend.db.models import get_db
-from backend.schemas import FeedbackListResponse, FeedbackRecord, FeedbackRequest
+from shared.db.crud import create_feedback_entry, list_feedback_entries
+from shared.db.models import get_db
+from shared.schemas import FeedbackListResponse, FeedbackRecord, FeedbackRequest
 from backend.utils.security import require_api_key
 
 

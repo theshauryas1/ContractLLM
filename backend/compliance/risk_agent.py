@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from backend.compliance.localization import localize_risk_title
-from backend.schemas import ComplianceMatrixRow, RiskFlag, RiskSeverity
+from shared.schemas import ComplianceMatrixRow, RiskFlag, RiskSeverity
 
 
 class RiskAgent:

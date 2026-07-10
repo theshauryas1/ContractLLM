@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from backend.schemas import ComplianceStatus, RequirementCategory, RiskSeverity
+from shared.schemas import ComplianceStatus, RequirementCategory, RiskSeverity
 
 
 LANGUAGE_FALLBACK = {"hi": "en", "unknown": "en"}

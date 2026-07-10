@@ -4,8 +4,8 @@ import re
 
 from backend.compliance.classifier_agent import ClassifierAgent
 from backend.compliance.localization import localize_category
-from backend.multilingual.translator import Translator
-from backend.schemas import ExtractedRequirement
+from shared.multilingual.translator import Translator
+from shared.schemas import ExtractedRequirement
 
 
 class ExtractorAgent:

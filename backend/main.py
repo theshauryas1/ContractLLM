@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -7,8 +8,17 @@ from backend.api.analysis import router as analysis_router
 from backend.api.dashboard import router as dashboard_router
 from backend.api.documents import router as documents_router
 from backend.api.feedback import router as feedback_router
-from backend.db.models import init_db
+from backend.api.users import router as users_router
+from shared.db.models import init_db
 from backend.utils.config import get_settings
+from shared.security.guardrails import (
+    SecureHeadersMiddleware,
+    SimpleRateLimitMiddleware,
+    SensitiveDataLoggingFilter,
+)
+
+# Apply logging filter to scrub logs of PII and API keys
+logging.getLogger().addFilter(SensitiveDataLoggingFilter())
 
 
 settings = get_settings()
@@ -36,6 +46,10 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Security gateway middlewares (Secure HTTP headers & API Rate Limiting)
+app.add_middleware(SecureHeadersMiddleware)
+app.add_middleware(SimpleRateLimitMiddleware, requests_per_minute=120)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_parse_cors_origins(settings.cors_origins),
@@ -47,6 +61,7 @@ app.include_router(analysis_router, prefix="/api")
 app.include_router(dashboard_router, prefix="/api")
 app.include_router(documents_router, prefix="/api")
 app.include_router(feedback_router, prefix="/api")
+app.include_router(users_router, prefix="/api")
 
 
 @app.get("/health")

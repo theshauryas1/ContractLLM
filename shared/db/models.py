@@ -118,6 +118,25 @@ class DocumentAsset(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String, unique=True, index=True, nullable=False)
+    email = Column(String, unique=True, index=True, nullable=False)
+    full_name = Column(String, nullable=True)
+    preferred_language = Column(String, default="en", nullable=False)
+    country = Column(String, nullable=True)
+    state = Column(String, nullable=True)
+    timezone = Column(String, nullable=True)
+    legal_profession = Column(String, nullable=True)
+    industry = Column(String, nullable=True)
+    org_id = Column(String, nullable=True)
+    default_jurisdiction = Column(String, nullable=True)
+    preferred_ai_model = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
 def init_db() -> None:
     if can_use_pgvector():
         with engine.begin() as connection:

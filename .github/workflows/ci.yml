@@ -1,0 +1,94 @@
+name: AI Legal Platform CI/CD
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest flake8 black
+
+      - name: Lint Code (Black & Flake8)
+        run: |
+          black --check backend shared tests
+          flake8 backend shared tests --count --select=E9,F63,F7,F82 --show-source --statistics
+
+      - name: Run Tests
+        env:
+          ENVIRONMENT: testing
+          DATABASE_URL: sqlite:///:memory:
+          REQUIRE_AUTH: false
+          LLM_PROVIDER: heuristic
+          TRANSLATION_PROVIDER: heuristic
+          EMBEDDING_PROVIDER: multilingual_vector
+        run: |
+          python -m pytest
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build Frontend
+        run: |
+          cd frontend
+          npm install
+          npm run build
+
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Run Security Linter (Bandit)
+        run: |
+          python -m pip install bandit
+          bandit -r backend shared -ll
+
+  docker-build:
+    needs: [lint-and-test, security-scan]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: actions/setup-buildx-action@v3
+
+      - name: Build Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          push: false
+          tags: ai-legal-platform:latest
+
+  deploy-staging:
+    needs: docker-build
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Staging Deployment
+        run: |
+          echo "Deploying application to Staging Environment (Render & Vercel)..."
+          # Standard deploy script triggers go here

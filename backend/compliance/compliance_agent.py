@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from backend.compliance.localization import localize_action, localize_reasoning, localize_status
 from backend.providers.compliance import HeuristicComplianceReasoningProvider, build_compliance_reasoning_provider
-from backend.schemas import ComplianceMatrixRow, EvidenceItem, FeedbackExample
+from shared.schemas import ComplianceMatrixRow, EvidenceItem, FeedbackExample
 from backend.utils.config import get_settings
 
 
