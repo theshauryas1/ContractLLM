@@ -1,6 +1,7 @@
-# Tender Compliance Engine
+# AI Legal Intelligence Platform
 
-Agentic compliance reasoning system for multilingual tenders and RFPs.
+Agentic compliance reasoning and legal assistant system for contracts, compliance, legal research, and business governance.
+Tagline: Your AI Legal Copilot for Contracts, Compliance, Legal Research, and Business Governance.
 
 This project is built for the workflow that matters in procurement:
 
@@ -69,7 +70,7 @@ python -m pytest -q
 
 ## Main API endpoints
 
-- `POST /api/analyze`
+- `POST /api/analyze` (Run compliance analysis)
 - `GET /api/analyses`
 - `GET /api/analyses/{analysis_id}`
 - `POST /api/documents`
@@ -78,6 +79,9 @@ python -m pytest -q
 - `GET /api/overview`
 - `POST /api/feedback`
 - `GET /api/feedback`
+- `POST /api/copilot/chat` (Copilot legal chatbot)
+- `POST /api/copilot/draft` (Template-based contract drafter)
+- `POST /api/copilot/search-citations` (Precedents and court citation researcher)
 
 Example analysis request:
 
@@ -106,13 +110,20 @@ DATABASE_URL=your_neon_database_url
 API_KEY=your_backend_secret
 REQUIRE_AUTH=true
 
-LLM_PROVIDER=xai
-LLM_MODEL=grok-4.20-reasoning
+# Multi-Provider Failover LLM configurations
+LLM_PROVIDER=gemini
+LLM_MODEL=gemini-flash-latest
+
+GEMINI_API_KEY=your_gemini_api_key
+GEMINI_MODEL=gemini-flash-latest
+GEMINI_BASE_URL=https://generativelanguage.googleapis.com/v1beta
+
+NVIDIA_API_KEY=your_nvidia_api_key
+NVIDIA_MODEL=meta/llama-3.3-70b-instruct
+NVIDIA_BASE_URL=https://integrate.api.nvidia.com/v1
+
 XAI_API_KEY=your_xai_key
 XAI_BASE_URL=https://api.x.ai/v1
-
-TRANSLATION_PROVIDER=xai
-TRANSLATION_MODEL=grok-4.20-reasoning
 
 EMBEDDING_PROVIDER=multilingual_vector
 EMBEDDING_MODEL=text-embedding-3-small
@@ -140,22 +151,22 @@ VITE_API_BASE=https://your-render-service.onrender.com/api
 VITE_API_KEY=
 ```
 
-## Deployment
+### Production Deployment
 
-Backend:
+The project is configured for serverless deployment on **Google Cloud Run** with a unified three-stage build:
+- **Python Builder**: Installs and compiles python packages cleanly.
+- **Node Compiler**: Packages and builds the React frontend app static assets (`dist/`).
+- **Runner**: Copies both built environments and serves them natively under a single domain endpoint.
 
-- Render
-- Neon Postgres
+Deploy command:
+```bash
+gcloud run deploy contract-llm-backend --source . --project [PROJECT_ID] --region us-central1 --allow-unauthenticated
+```
 
-Frontend:
-
-- Vercel
-
-Deployment scaffolding:
-
-- [render.yaml](/abs/path/c:/ContractLLM/render.yaml)
-- [Dockerfile](/abs/path/c:/ContractLLM/Dockerfile)
-- [vercel.json](/abs/path/c:/ContractLLM/vercel.json)
+Scaffolding blueprints:
+- [docker/Dockerfile](file:///d:/ContractLLM/docker/Dockerfile)
+- [terraform/main.tf](file:///d:/ContractLLM/terraform/main.tf)
+- [docs/deployment.md](file:///d:/ContractLLM/docs/deployment.md)
 
 ## Notes
 

@@ -10,6 +10,35 @@ def test_health_endpoint(client) -> None:
     assert response.json()["status"] == "ok"
 
 
+def test_root_endpoint(client) -> None:
+    response = client.get("/")
+    assert response.status_code == 200
+    if "text/html" in response.headers.get("content-type", ""):
+        assert "html" in response.text.lower()
+    else:
+        assert "AI Legal Intelligence Platform" in response.json()["message"]
+
+
+def test_copilot_endpoints(client) -> None:
+    # Test Chat
+    chat_response = client.post("/api/copilot/chat", json={"message": "What is an NDA?"})
+    assert chat_response.status_code == 200
+    assert "reply" in chat_response.json()
+
+    # Test Draft
+    draft_response = client.post(
+        "/api/copilot/draft",
+        json={"template_name": "NDA", "party_details": "Company A and Company B", "custom_terms": "Confidential for 5 years"}
+    )
+    assert draft_response.status_code == 200
+    assert "draft" in draft_response.json()
+
+    # Test Citation Search
+    citations_response = client.post("/api/copilot/search-citations", json={"keywords": "Supreme Court GDPR"})
+    assert citations_response.status_code == 200
+    assert "results" in citations_response.json()
+
+
 def test_tender_analysis_flow_returns_compliance_matrix(client) -> None:
     payload = {
         "tender_title": "Municipal Maintenance Framework",

@@ -14,8 +14,12 @@ import DocumentLibrary from "../components/DocumentLibrary";
 import OverviewPanel from "../components/OverviewPanel";
 import RiskPanel from "../components/RiskPanel";
 import UserProfilePanel from "../components/UserProfilePanel";
+import CopilotChat from "../components/CopilotChat";
+import DocumentDrafter from "../components/DocumentDrafter";
+import CitationResearcher from "../components/CitationResearcher";
 
 export default function Dashboard() {
+  const [activeTab, setActiveTab] = useState("compliance");
   const [overview, setOverview] = useState(null);
   const [analyses, setAnalyses] = useState([]);
   const [documents, setDocuments] = useState([]);
@@ -26,7 +30,11 @@ export default function Dashboard() {
   const [message, setMessage] = useState("");
 
   async function loadDashboard() {
-    const [overviewData, analysesData, documentsData] = await Promise.all([fetchOverview(), fetchAnalyses(), fetchDocuments()]);
+    const [overviewData, analysesData, documentsData] = await Promise.all([
+      fetchOverview(),
+      fetchAnalyses(),
+      fetchDocuments()
+    ]);
     setOverview(overviewData);
     setAnalyses(analysesData.analyses);
     setDocuments(documentsData.items);
@@ -110,41 +118,91 @@ export default function Dashboard() {
   }
 
   return (
-    <main className="layout">
-      <section className="hero">
-        <p className="eyebrow">Agentic Compliance System</p>
-        <h1>Tender reasoning, grounded evidence, and auditable risk analysis.</h1>
-        <p className="lede">
-          Parse multilingual tenders, retrieve company evidence, classify compliance gaps, and capture reviewer feedback
-          in one workflow.
-        </p>
-      </section>
+    <div className="app-shell">
+      <aside className="sidebar">
+        <div className="sidebar-brand">
+          <span className="brand-logo">⚖️</span>
+          <h2>Legal Copilot</h2>
+        </div>
+        <nav className="sidebar-nav">
+          <button
+            className={`nav-item ${activeTab === "compliance" ? "active" : ""}`}
+            onClick={() => setActiveTab("compliance")}
+          >
+            📋 Compliance Engine
+          </button>
+          <button
+            className={`nav-item ${activeTab === "chat" ? "active" : ""}`}
+            onClick={() => setActiveTab("chat")}
+          >
+            💬 AI Legal Chat
+          </button>
+          <button
+            className={`nav-item ${activeTab === "drafter" ? "active" : ""}`}
+            onClick={() => setActiveTab("drafter")}
+          >
+            ✍️ Document Drafter
+          </button>
+          <button
+            className={`nav-item ${activeTab === "research" ? "active" : ""}`}
+            onClick={() => setActiveTab("research")}
+          >
+            🔍 Citation Research
+          </button>
+          <button
+            className={`nav-item ${activeTab === "profile" ? "active" : ""}`}
+            onClick={() => setActiveTab("profile")}
+          >
+            👤 User Profile
+          </button>
+        </nav>
+      </aside>
 
-      <OverviewPanel overview={overview} analyses={analyses} onSelectAnalysis={handleSelectAnalysis} />
-      <AnalysisForm
-        documents={documents}
-        onSubmit={handleSubmit}
-        onUploadDocument={handleUploadDocument}
-        loading={loading}
-        uploadingKind={uploadingKind}
-      />
-      <DocumentLibrary documents={documents} />
-      <UserProfilePanel />
-
-      {message ? (
-        <section className="panel panel-message">
-          <p>{message}</p>
+      <main className="content-area">
+        <section className="hero">
+          <p className="eyebrow">AI Legal Intelligence Platform</p>
+          <h1>Your AI Legal Copilot for Contracts, Compliance, Legal Research, and Governance</h1>
+          <p className="lede">
+            Draft contracts, analyze vendor compliance matrices, search legal citations, and ask our chatbot legal questions.
+          </p>
         </section>
-      ) : null}
 
-      {error ? (
-        <section className="panel panel-error">
-          <p>{error}</p>
-        </section>
-      ) : null}
+        {message && (
+          <section className="panel panel-message">
+            <p>{message}</p>
+          </section>
+        )}
 
-      <ComplianceMatrix analysis={currentAnalysis} onSubmitFeedback={handleFeedback} />
-      <RiskPanel risks={currentAnalysis?.matrix?.risks ?? []} />
-    </main>
+        {error && (
+          <section className="panel panel-error">
+            <p>{error}</p>
+          </section>
+        )}
+
+        {activeTab === "compliance" && (
+          <>
+            <OverviewPanel overview={overview} analyses={analyses} onSelectAnalysis={handleSelectAnalysis} />
+            <AnalysisForm
+              documents={documents}
+              onSubmit={handleSubmit}
+              onUploadDocument={handleUploadDocument}
+              loading={loading}
+              uploadingKind={uploadingKind}
+            />
+            <DocumentLibrary documents={documents} />
+            <ComplianceMatrix analysis={currentAnalysis} onSubmitFeedback={handleFeedback} />
+            <RiskPanel risks={currentAnalysis?.matrix?.risks ?? []} />
+          </>
+        )}
+
+        {activeTab === "chat" && <CopilotChat />}
+
+        {activeTab === "drafter" && <DocumentDrafter />}
+
+        {activeTab === "research" && <CitationResearcher />}
+
+        {activeTab === "profile" && <UserProfilePanel />}
+      </main>
+    </div>
   );
 }

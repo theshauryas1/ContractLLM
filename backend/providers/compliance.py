@@ -283,31 +283,80 @@ class NvidiaComplianceReasoningProvider(BaseComplianceReasoningProvider):
         return self._enforce_language(decision, output_language)
 
 
+class FallbackComplianceReasoningProvider(ComplianceReasoningProvider):
+    def __init__(self, providers: list[ComplianceReasoningProvider]) -> None:
+        self.providers = providers
+
+    def assess(
+        self,
+        requirement_text: str,
+        category_label: str,
+        evidence: list[EvidenceItem],
+        output_language: str,
+        feedback_examples: list[FeedbackExample],
+    ) -> ComplianceDecisionPayload:
+        errors = []
+        for provider in self.providers:
+            try:
+                return provider.assess(
+                    requirement_text=requirement_text,
+                    category_label=category_label,
+                    evidence=evidence,
+                    output_language=output_language,
+                    feedback_examples=feedback_examples,
+                )
+            except Exception as e:
+                logger.warning(f"Compliance provider {provider.__class__.__name__} failed: {e}. Trying next fallback...")
+                errors.append(f"{provider.__class__.__name__}: {str(e)}")
+        
+        # If all fail, use the heuristic provider as a final safety net
+        logger.error(f"All LLM providers failed: {errors}. Falling back to Heuristic compliance provider.")
+        return HeuristicComplianceReasoningProvider().assess(
+            requirement_text=requirement_text,
+            category_label=category_label,
+            evidence=evidence,
+            output_language=output_language,
+            feedback_examples=feedback_examples,
+        )
+
+
 def build_compliance_reasoning_provider() -> ComplianceReasoningProvider:
     settings = get_settings()
+    providers = []
     
-    # xAI Grok provider route
-    if settings.llm_provider == "xai" and settings.xai_api_key:
-        return XAIComplianceReasoningProvider(
-            api_key=settings.xai_api_key,
-            model=settings.llm_model,
-            base_url=settings.xai_base_url,
+    # 1. Google Gemini
+    if settings.gemini_api_key:
+        providers.append(
+            GeminiComplianceReasoningProvider(
+                api_key=settings.gemini_api_key,
+                model=settings.gemini_model,
+                base_url=settings.gemini_base_url,
+            )
         )
         
-    # Google Gemini provider route
-    elif settings.llm_provider == "gemini" and settings.gemini_api_key:
-        return GeminiComplianceReasoningProvider(
-            api_key=settings.gemini_api_key,
-            model=settings.gemini_model,
-            base_url=settings.gemini_base_url,
+    # 2. NVIDIA NIM
+    if settings.nvidia_api_key:
+        providers.append(
+            NvidiaComplianceReasoningProvider(
+                api_key=settings.nvidia_api_key,
+                model=settings.nvidia_model,
+                base_url=settings.nvidia_base_url,
+            )
         )
         
-    # NVIDIA NIM provider route
-    elif settings.llm_provider == "nvidia" and settings.nvidia_api_key:
-        return NvidiaComplianceReasoningProvider(
-            api_key=settings.nvidia_api_key,
-            model=settings.nvidia_model,
-            base_url=settings.nvidia_base_url,
+    # 3. xAI Grok
+    if settings.xai_api_key:
+        # Use grok-beta/grok-2 as default if llm_model is configured with invalid name
+        model_name = settings.llm_model if "grok" in settings.llm_model.lower() else "grok-beta"
+        providers.append(
+            XAIComplianceReasoningProvider(
+                api_key=settings.xai_api_key,
+                model=model_name,
+                base_url=settings.xai_base_url,
+            )
         )
+        
+    if providers:
+        return FallbackComplianceReasoningProvider(providers)
         
     return HeuristicComplianceReasoningProvider()

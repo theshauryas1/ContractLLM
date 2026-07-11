@@ -80,3 +80,24 @@ export function updateUserProfile(payload) {
     body: JSON.stringify(payload)
   });
 }
+
+export function submitCopilotChat(payload) {
+  return readJson("/copilot/chat", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export function submitCopilotDraft(payload) {
+  return readJson("/copilot/draft", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export function submitCopilotSearchCitations(payload) {
+  return readJson("/copilot/search-citations", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
