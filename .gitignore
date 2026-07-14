@@ -12,3 +12,8 @@ frontend/dist/
 llm_eval.db
 
 .DS_Store
+
+# Document notes
+INTERVIEW_NOTES.md
+LEARNING_NOTES.md
+

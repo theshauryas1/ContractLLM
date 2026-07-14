@@ -1,182 +1,181 @@
-# AI Legal Intelligence Platform
+# AI Legal Intelligence Platform (Tender Compliance Engine)
 
-Agentic compliance reasoning and legal assistant system for contracts, compliance, legal research, and business governance.
-Tagline: Your AI Legal Copilot for Contracts, Compliance, Legal Research, and Business Governance.
+> **Your AI Legal Copilot for Contracts, Compliance, Legal Research, and Business Governance.**
 
-This project is built for the workflow that matters in procurement:
+The AI Legal Intelligence Platform is a decoupled, agentic system designed to analyze complex procurement documents (tenders, RFP specs), extract requirements, perform multilingual RAG matching against corporate records, and determine compliance status (`full`, `partial`, `missing`) while flagging key disqualification and scoring risks.
 
-1. Parse a tender or tender PDF
-2. Extract structured requirements
-3. Retrieve grounded company evidence with multilingual-friendly matching
-4. Classify each requirement as `full`, `partial`, or `missing`
-5. Flag legal, eligibility, and scoring risks
-6. Store reviewer feedback so later analyses improve
+---
 
-## Core product output
+## Key Features
 
-The main output is a compliance matrix, not a draft proposal.
+- **Ingestion & Parsing**: Paste plain text or upload base64-encoded/raw PDFs. Automatically parses documents via `ParserAgent` using PyMuPDF (`fitz`) and normalizes whitespace/character encoding.
+- **Multilingual Support**: Real-time language detection via `LanguageDetector` and translation fallbacks via `Translator`. Supports English, German, French, Spanish, Dutch, and Hindi.
+- **AI-Powered Requirement Extraction**: Extracts requirement lines, determines if they are mandatory, and categorizes them (`eligibility`, `technical`, `financial`, `legal`, `operational`) using heuristic search and keyword classifiers.
+- **Hybrid RAG Matching**: Combines semantic embedding search (via custom embedding providers) with lexical token-overlap retrieval to surface relevant corporate capabilities and documents.
+- **Failover LLM Reasoning**: Chains multiple AI providers (Google Gemini, NVIDIA NIM, and xAI Grok) with automated failovers and a rule-based heuristic reasoning fallback as a safety net.
+- **Interactive Feedback Loop**: Stores reviewer-corrected compliance decisions and uses them as high-importance evidence in subsequent analyses of similar requirements.
+- **Dual-Database Support**: Uses SQLite locally for light footprint development and PostgreSQL with the `pgvector` extension for production-ready, high-speed vector similarity queries.
+- **AI Legal Copilot Suite**:
+  - **Copilot Chat**: Conversational assistant with context injection.
+  - **Contract Drafter**: Template-driven contract generation based on custom terms.
+  - **Citation Search**: Precedent, case law, and citation search engine.
 
-Each requirement includes:
+---
 
-- status
-- reasoning
-- retrieved evidence
-- confidence
-- recommended action
-- risk flags
+## System Architecture
 
-## Architecture
+The core of the compliance platform is structured as a decoupled multi-agent pipeline coordinated by the `TenderComplianceOrchestrator`:
 
-Backend agents:
+```
+                       +-------------------------------+
+                       |           React Frontend      |
+                       +---------------+---------------+
+                                       | HTTP JSON / REST API
+                       +---------------v---------------+
+                       |        FastAPI Web Server     |
+                       +---------------+---------------+
+                                       |
+                       +---------------v---------------+
+                       |  TenderComplianceOrchestrator |
+                       +---------------+---------------+
+                                       | (Coordinates execution)
+        +---------------+--------------+--------------+---------------+--------------+
+        |               |              |              |               |              |
+ +------v------+ +------v------+ +------v------+ +------v------+ +------v------+ +------v------+
+ | ParserAgent | |ExtractorAgent| |  RAGAgent   | |ComplianceAgnt| |  RiskAgent   | |Translator  |
+ +------+------+ +------+------+ +------+------+ +------+------+ +------+------+ +------+------+
+        |               |              |              |               |              |
+        v               v              v              v               v              v
+   Text & PDF      Requirement     Vector &      Status & AI      Compliance     Multilingual
+   Extracting     Classification    Lexical       Reasoning       Risk Flags     Localization
+                  & Weighting      Retrieval    (Gemini/Grok)
+```
 
-- `ParserAgent`: accepts pasted text or base64 PDF payloads
-- `ExtractorAgent`: identifies requirements and categories
-- `RAGAgent`: retrieves supporting company evidence and KB notes
-- `ComplianceAgent`: decides `full`, `partial`, or `missing`
-- `RiskAgent`: flags disqualification and scoring risks
+1. **[ParserAgent](file:///d:/ContractLLM/backend/compliance/parser_agent.py)**: Extracts and cleans plain text from documents. Detects input language.
+2. **[ExtractorAgent](file:///d:/ContractLLM/backend/compliance/extractor_agent.py)**: Identifies requirement segments using keyword hints and triggers the classification sub-agent.
+3. **[ClassifierAgent](file:///d:/ContractLLM/backend/compliance/classifier_agent.py)**: Maps requirements into categories and evaluates if they represent mandatory criteria.
+4. **[RAGAgent](file:///d:/ContractLLM/backend/compliance/rag_agent.py)**: Generates embeddings, syncs document chunks, and queries knowledge base records using hybrid vector-lexical scoring.
+5. **[ComplianceAgent](file:///d:/ContractLLM/backend/compliance/compliance_agent.py)**: Resolves compliance status (`full`, `partial`, `missing`) and compiles audit trails.
+6. **[RiskAgent](file:///d:/ContractLLM/backend/compliance/risk_agent.py)**: Evaluates the compliance matrix row-by-row to flag disqualification, scoring, or operational risks.
 
-Supporting systems:
+For a detailed look at diagrams, component layouts, and database relations, see [ARCHITECTURE.md](file:///d:/ContractLLM/ARCHITECTURE.md).
 
-- multilingual detection and translation utilities
-- feedback loop stored in Postgres/SQLite
-- scoped knowledge chunk storage with `pgvector` support on Neon/Postgres
-- xAI structured-output reasoning with heuristic fallback
-- Render + Neon + Vercel deployment setup
+---
 
-## Quick start
+## Interface Preview (Screenshots)
 
-### Backend
+### 1. Compliance Matrix Dashboard
+Displays extracted requirements, categories, status highlights, confidence metrics, and recommended actions.
+*Placeholder Link: `/docs/screenshots/dashboard.png`*
 
+### 2. Legal Copilot Interface
+Interactive workspace for drafting contracts, searching case precedents, and querying compliance records.
+*Placeholder Link: `/docs/screenshots/copilot.png`*
+
+---
+
+## Setup & Running Guide
+
+### 1. Local Development (SQLite)
+
+#### Backend Setup
 ```bash
+# 1. Create a Python 3.12 virtual environment
 python -m venv .venv
-.venv\Scripts\activate
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# 2. Install requirements
 pip install -r requirements.txt
+
+# 3. Create a local environment file
+cp .env.example .env       # (Or update current .env with your LLM API Keys)
+
+# 4. Run the FastAPI development server
 uvicorn backend.main:app --reload
 ```
 
-### Frontend
-
+#### Frontend Setup
 ```bash
+# 1. Navigate to frontend directory
 cd frontend
+
+# 2. Install Node dependencies
 npm install
+
+# 3. Start the Vite server
 npm run dev
 ```
 
-### Tests
+### 2. Containerized Deployment (Docker)
 
+To run the unified frontend and backend inside a single Docker container:
+```bash
+# Build the image using the three-stage production build
+docker build -t contract-llm -f docker/Dockerfile .
+
+# Run the container (injecting environment variables)
+docker run -p 8000:8000 --env-file .env contract-llm
+```
+
+### 3. Running Tests
+Ensure database migrations, endpoints, and security headers are functional:
 ```bash
 python -m pytest -q
 ```
 
-## Main API endpoints
+---
 
-- `POST /api/analyze` (Run compliance analysis)
-- `GET /api/analyses`
-- `GET /api/analyses/{analysis_id}`
-- `POST /api/documents`
-- `GET /api/documents`
-- `GET /api/documents/{document_id}/download`
-- `GET /api/overview`
-- `POST /api/feedback`
-- `GET /api/feedback`
-- `POST /api/copilot/chat` (Copilot legal chatbot)
-- `POST /api/copilot/draft` (Template-based contract drafter)
-- `POST /api/copilot/search-citations` (Precedents and court citation researcher)
+## Main API Gateway Endpoints
 
-Example analysis request:
+Below is a summary of the API endpoints. For detailed JSON structures and request/response payloads, see [API.md](file:///d:/ContractLLM/API.md).
 
-```json
-{
-  "tender_title": "Municipal Services Tender",
-  "tender_text": "The bidder must provide ISO 9001 certification.",
-  "company_profile_text": "Our company holds ISO 9001 certification.",
-  "target_language": "auto",
-  "kb_documents": [
-    {
-      "title": "Capability Notes",
-      "content": "We support public-sector clients."
-    }
-  ]
-}
-```
+| Method | Endpoint | Description | Auth Required |
+| :--- | :--- | :--- | :--- |
+| **POST** | `/api/analyze` | Initiates requirement extraction and compliance matching | Yes |
+| **GET** | `/api/analyses` | Lists summaries of all historical analysis runs | Yes |
+| **GET** | `/api/analyses/{id}` | Retrieves full matrix and risk logs of a specific run | Yes |
+| **POST** | `/api/documents` | Uploads a PDF or text document asset to the platform | Yes |
+| **GET** | `/api/documents` | Lists all stored document assets (Tenders/Company/KB) | Yes |
+| **GET** | `/api/documents/{id}/download` | Downloads the raw file bytes of a document asset | Yes |
+| **GET** | `/api/overview` | Retrieves aggregate metrics and language stats for dashboard | Yes |
+| **POST** | `/api/feedback` | Registers human corrections to retrain RAG/LLM status calls | Yes |
+| **GET** | `/api/feedback` | Retrieves historical feedback logs | Yes |
+| **GET** | `/api/users/me` | Fetches preferences and organizational settings for current user | Yes (Clerk) |
+| **PUT** | `/api/users/me` | Updates user settings (e.g. target language, AI models) | Yes (Clerk) |
+| **POST** | `/api/copilot/chat` | AI chatbot assistant with context injection | No |
+| **POST** | `/api/copilot/draft` | Template-based contract drafting agent | No |
+| **POST** | `/api/copilot/search-citations` | Law Precedents and court case citation searcher | No |
 
-## Environment variables
+---
 
-Important backend values:
+## Configuration Variables
+
+The system is configured via environment variables (loaded from `.env`). Core parameters include:
 
 ```env
-ENVIRONMENT=production
-DATABASE_URL=your_neon_database_url
-API_KEY=your_backend_secret
-REQUIRE_AUTH=true
+# Server Environment
+ENVIRONMENT=development
+DATABASE_URL=sqlite:///./llm_eval.db
+API_KEY=local-dev-key
+REQUIRE_AUTH=false
 
-# Multi-Provider Failover LLM configurations
+# LLM Providers Configuration
 LLM_PROVIDER=gemini
-LLM_MODEL=gemini-flash-latest
-
-GEMINI_API_KEY=your_gemini_api_key
+GEMINI_API_KEY=your-gemini-key
 GEMINI_MODEL=gemini-flash-latest
-GEMINI_BASE_URL=https://generativelanguage.googleapis.com/v1beta
 
-NVIDIA_API_KEY=your_nvidia_api_key
-NVIDIA_MODEL=meta/llama-3.3-70b-instruct
-NVIDIA_BASE_URL=https://integrate.api.nvidia.com/v1
-
-XAI_API_KEY=your_xai_key
-XAI_BASE_URL=https://api.x.ai/v1
-
+# RAG & Embedding Settings
 EMBEDDING_PROVIDER=multilingual_vector
-EMBEDDING_MODEL=text-embedding-3-small
 EMBEDDING_DIMENSIONS=12
 VECTOR_DB=pgvector
-MULTILINGUAL_EMBEDDINGS=true
 
+# Language Processing
 LANGUAGE_MODE=auto
 DEFAULT_OUTPUT_LANGUAGE=en
 STRICT_LANGUAGE_MATCH=true
-ALLOW_LANGUAGE_OVERRIDE=true
-LANGUAGE_RETRY_LIMIT=2
-
-ENABLE_FEEDBACK_LOOP=true
-FEEDBACK_STORE=postgres
-CONFIDENCE_THRESHOLD=0.75
-
-BACKEND_CORS_ORIGINS=https://your-vercel-app.vercel.app
 ```
 
-Frontend:
-
-```env
-VITE_API_BASE=https://your-render-service.onrender.com/api
-VITE_API_KEY=
-```
-
-### Production Deployment
-
-The project is configured for serverless deployment on **Google Cloud Run** with a unified three-stage build:
-- **Python Builder**: Installs and compiles python packages cleanly.
-- **Node Compiler**: Packages and builds the React frontend app static assets (`dist/`).
-- **Runner**: Copies both built environments and serves them natively under a single domain endpoint.
-
-Deploy command:
-```bash
-gcloud run deploy contract-llm-backend --source . --project [PROJECT_ID] --region us-central1 --allow-unauthenticated
-```
-
-Scaffolding blueprints:
-- [docker/Dockerfile](file:///d:/ContractLLM/docker/Dockerfile)
-- [terraform/main.tf](file:///d:/ContractLLM/terraform/main.tf)
-- [docs/deployment.md](file:///d:/ContractLLM/docs/deployment.md)
-
-## Notes
-
-- The local fallback path is deterministic for testing and development.
-- When `XAI_API_KEY` is configured, the project uses xAI structured outputs for per-requirement compliance reasoning.
-- When `DATABASE_URL` points to Neon/Postgres, the app enables the `vector` extension and stores knowledge embeddings in `pgvector`.
-- `EMBEDDING_DIMENSIONS=12` matches the built-in multilingual vector fallback. If you switch to a hosted embedding model, set this to that model's embedding size.
-- Uploaded tender, company, and knowledge PDFs are stored in the database and can be reused across analyses.
-- The frontend supports browser-stored API keys and sends them as `x-api-key` on all backend calls.
-- Feedback is stored and reused as a correction signal for similar future requirements.
+---
 
 ## Agentic Development & Custom Skills
 
@@ -194,4 +193,3 @@ When working with Antigravity, developers and agents are encouraged to leverage 
 1. **Context Restoration**: Use the `context-management-context-restore` skill to automatically rehydrate the semantic memory and project state when resuming a development session.
 2. **Context Preservation**: Use the `context-management-context-save` skill to serialize the workspace state, architectural decisions, and current progress.
 3. **Structured Documentation**: Use the `wiki-architect` skill alongside the custom `contract-llm-docs` skill to generate structured wikis, zero-to-hero onboarding paths, and principal-level guides referencing real files in this repository.
-
