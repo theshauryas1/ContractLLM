@@ -1,5 +1,7 @@
 # AI Legal Intelligence Platform (Tender Compliance Engine)
 
+https://github.com/user-attachments/assets/9684590b-c105-4ef8-b81d-27f0dc52d57d
+
 > **Your AI Legal Copilot for Contracts, Compliance, Legal Research, and Business Governance.**
 
 The AI Legal Intelligence Platform is a decoupled, agentic system designed to analyze complex procurement documents (tenders, RFP specs), extract requirements, perform multilingual RAG matching against corporate records, and determine compliance status (`full`, `partial`, `missing`) while flagging key disqualification and scoring risks.
