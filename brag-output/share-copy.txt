@@ -1,0 +1,11 @@
+⚖️ ContractLLM — AI Legal Intelligence Platform & Tender Compliance Engine
+
+Transforming 200-page tenders into audit-ready, winning bids in seconds:
+
+⚡ Decoupled Multi-Agent Orchestration: ParserAgent (PyMuPDF), ExtractorAgent, ClassifierAgent, RAGAgent, ComplianceAgent, and RiskAgent coordinated by a central orchestrator.
+🔍 Hybrid RAG & Knowledge Retrieval: Combines PostgreSQL pgvector dense embeddings with lexical token-overlap search against corporate capability records.
+🛡️ Triple-LLM Failover Architecture: Resilient multi-provider routing (Google Gemini ↔ NVIDIA NIM ↔ xAI Grok) with deterministic rule-based heuristic fallbacks.
+📊 Granular Compliance Matrix: Automated status determination (Full, Partial, Missing), evidence citation, disqualification risk scoring, and reviewer feedback loops.
+💼 Legal Copilot Suite: Interactive Copilot Chat, Contract Drafter, and Precedent Citation Researcher.
+
+GitHub: https://github.com/theshauryas1/ContractLLM

@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, height=1080, initial-scale=1.0">
+<title>ContractLLM — AI Legal Intelligence Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
+  body {
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    background: #080e1a;
+    color: #e2e8f0;
+    font-family: 'Inter', sans-serif;
+    position: relative;
+  }
+
+  /* Deep Legal-Tech Obsidian Canvas */
+  .grid-bg {
+    position: absolute;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(245, 158, 11, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(245, 158, 11, 0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+  }
+  .radial-glow-1 {
+    position: absolute;
+    width: 900px;
+    height: 900px;
+    top: -200px;
+    left: 200px;
+    background: radial-gradient(circle, rgba(245, 158, 11, 0.12) 0%, transparent 70%);
+    filter: blur(90px);
+    pointer-events: none;
+  }
+  .radial-glow-2 {
+    position: absolute;
+    width: 1000px;
+    height: 1000px;
+    bottom: -300px;
+    right: 100px;
+    background: radial-gradient(circle, rgba(6, 182, 212, 0.12) 0%, transparent 70%);
+    filter: blur(100px);
+    pointer-events: none;
+  }
+
+  /* Scanline effect */
+  .scanline {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, transparent 50%, rgba(0, 0, 0, 0.25) 51%);
+    background-size: 100% 4px;
+    pointer-events: none;
+    opacity: 0.5;
+  }
+
+  /* Top telemetry header */
+  .telemetry-bar {
+    position: absolute;
+    top: 36px;
+    left: 80px;
+    right: 80px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: #64748b;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    z-index: 100;
+  }
+  .telemetry-bar .active-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #f59e0b;
+  }
+  .telemetry-bar .dot {
+    width: 8px;
+    height: 8px;
+    background: #f59e0b;
+    border-radius: 50%;
+    box-shadow: 0 0 10px #f59e0b;
+  }
+
+  /* Bottom telemetry bar */
+  .bottom-bar {
+    position: absolute;
+    bottom: 36px;
+    left: 80px;
+    right: 80px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: #64748b;
+    letter-spacing: 1.5px;
+    z-index: 100;
+  }
+
+  /* Scene Container */
+  .scene {
+    position: absolute;
+    inset: 0;
+    padding: 100px 80px 80px 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    opacity: 0;
+    transform: translateY(12px) scale(0.99);
+    transition: none;
+    pointer-events: none;
+  }
+
+  /* Badges & Chips */
+  .tag-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    border-radius: 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    color: #fbbf24;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.15);
+  }
+  .tag-cyan {
+    background: rgba(6, 182, 212, 0.12);
+    border-color: rgba(6, 182, 212, 0.35);
+    color: #22d3ee;
+    box-shadow: 0 0 20px rgba(6, 182, 212, 0.2);
+  }
+  .tag-emerald {
+    background: rgba(16, 185, 129, 0.12);
+    border-color: rgba(16, 185, 129, 0.35);
+    color: #34d399;
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
+  }
+
+  /* Typography */
+  h1.hero-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 64px;
+    font-weight: 800;
+    letter-spacing: -1.5px;
+    line-height: 1.05;
+    background: linear-gradient(135deg, #ffffff 40%, #94a3b8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 16px;
+  }
+  .gradient-gold {
+    background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .gradient-cyan {
+    background: linear-gradient(135deg, #22d3ee 0%, #0284c7 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .gradient-emerald {
+    background: linear-gradient(135deg, #34d399 0%, #059669 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  p.hero-subtitle {
+    font-size: 20px;
+    color: #94a3b8;
+    line-height: 1.5;
+    max-width: 950px;
+    margin-bottom: 36px;
+  }
+
+  /* Glassmorphic Panel Cards */
+  .glass-card {
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* SCENE 1 STYLES */
+  .scene1-grid {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 60px;
+    align-items: center;
+  }
+  .legal-seal-box {
+    width: 440px;
+    height: 440px;
+    margin: 0 auto;
+    border-radius: 24px;
+    border: 2px solid rgba(245, 158, 11, 0.3);
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.95));
+    position: relative;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: 0 0 60px rgba(245, 158, 11, 0.12);
+  }
+  .doc-scan-line {
+    position: absolute;
+    left: 20px;
+    right: 20px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #fbbf24, transparent);
+    box-shadow: 0 0 15px #fbbf24;
+    animation: scanMove 3s ease-in-out infinite alternate;
+  }
+  @keyframes scanMove {
+    0% { top: 40px; }
+    100% { top: 390px; }
+  }
+  .feature-capsules {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 10px;
+  }
+  .capsule-box {
+    background: rgba(15, 23, 42, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 16px 20px;
+    border-left: 4px solid #f59e0b;
+  }
+  .capsule-box.cyan { border-left-color: #06b6d4; }
+  .capsule-box.emerald { border-left-color: #10b981; }
+  .capsule-box h4 { font-size: 15px; color: #fff; margin-bottom: 4px; font-weight: 700; }
+  .capsule-box p { font-size: 12px; color: #94a3b8; }
+
+  /* SCENE 2 STYLES (6 AGENTS) */
+  .agents-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-top: 10px;
+  }
+  .agent-card {
+    background: rgba(15, 23, 42, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    padding: 22px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .agent-card.gold-border { border-color: rgba(245, 158, 11, 0.35); box-shadow: 0 0 30px rgba(245, 158, 11, 0.1); }
+  .agent-card.cyan-border { border-color: rgba(6, 182, 212, 0.35); box-shadow: 0 0 30px rgba(6, 182, 212, 0.1); }
+  .agent-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .agent-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+  }
+  .agent-badge {
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .badge-gold { background: rgba(245, 158, 11, 0.18); color: #fbbf24; }
+  .badge-cyan { background: rgba(6, 182, 212, 0.18); color: #22d3ee; }
+  .badge-emerald { background: rgba(16, 185, 129, 0.18); color: #34d399; }
+  .agent-desc {
+    font-size: 13px;
+    color: #94a3b8;
+    line-height: 1.6;
+    margin-bottom: 12px;
+  }
+  .agent-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: #f59e0b;
+  }
+
+  /* SCENE 3 STYLES (COMPLIANCE MATRIX) */
+  .matrix-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 10px;
+    margin-top: 10px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .matrix-row {
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 16px 24px;
+    display: grid;
+    grid-template-columns: 2.2fr 1fr 1.3fr 1.8fr;
+    gap: 20px;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    width: fit-content;
+  }
+  .status-full { background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #34d399; }
+  .status-partial { background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; color: #fbbf24; }
+  .status-critical { background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: #f87171; }
+
+  /* SCENE 4 STYLES (LEGAL COPILOT) */
+  .copilot-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30px;
+    margin-top: 16px;
+  }
+  .copilot-card {
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
+    padding: 32px 28px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 400px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+    position: relative;
+  }
+  .copilot-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    margin-bottom: 20px;
+  }
+  .copilot-card.cyan .copilot-icon { background: rgba(6, 182, 212, 0.12); border-color: rgba(6, 182, 212, 0.3); }
+  .copilot-card.emerald .copilot-icon { background: rgba(16, 185, 129, 0.12); border-color: rgba(16, 185, 129, 0.3); }
+
+  /* SCENE 5 STYLES (ENTERPRISE HERO) */
+  .outro-grid {
+    display: grid;
+    grid-template-columns: 0.95fr 1.05fr;
+    gap: 60px;
+    align-items: center;
+    margin-top: 10px;
+  }
+  .hero-metric-box {
+    background: rgba(15, 23, 42, 0.85);
+    border: 2px solid rgba(245, 158, 11, 0.35);
+    border-radius: 24px;
+    padding: 44px;
+    text-align: center;
+    box-shadow: 0 0 80px rgba(245, 158, 11, 0.15);
+  }
+  .hero-metric-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 76px;
+    font-weight: 800;
+    line-height: 1;
+    background: linear-gradient(135deg, #fbbf24 0%, #10b981 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 12px;
+  }
+  .repo-footer-box {
+    margin-top: 24px;
+    padding: 16px 24px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px dashed rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: #94a3b8;
+  }
+  .repo-footer-box span.url { color: #fbbf24; font-weight: 600; }
+
+</style>
+</head>
+<body>
+
+<div class="grid-bg"></div>
+<div class="radial-glow-1"></div>
+<div class="radial-glow-2"></div>
+<div class="scanline"></div>
+
+<!-- Telemetry Header -->
+<div class="telemetry-bar">
+  <div class="active-indicator">
+    <div class="dot"></div>
+    <span>AI LEGAL INTELLIGENCE SUBSYSTEM // LIVE</span>
+  </div>
+  <div>PIPELINE: TENDER COMPLIANCE ORCHESTRATOR</div>
+  <div id="telemetry-time">TIME: 00:00:00</div>
+</div>
+
+<!-- ==================== SCENE 1: HOOK & OVERVIEW ==================== -->
+<div class="scene" id="scene1">
+  <div class="scene1-grid">
+    <div>
+      <div class="tag-badge">AI LEGAL COPILOT • TENDER COMPLIANCE ENGINE</div>
+      <h1 class="hero-title">CONTRACTLLM<br><span class="gradient-gold">LEGAL INTELLIGENCE</span></h1>
+      <p class="hero-subtitle">Automated compliance determination, risk auditing, and hybrid RAG retrieval for complex multi-million dollar procurement tenders and corporate contracts.</p>
+      
+      <div class="feature-capsules">
+        <div class="capsule-box">
+          <h4>100+ PAGE RFPS</h4>
+          <p>Instant parsing of unstructured tenders & specs</p>
+        </div>
+        <div class="capsule-box cyan">
+          <h4>HYBRID RAG</h4>
+          <p>Dense vector + lexical capability matching</p>
+        </div>
+        <div class="capsule-box emerald">
+          <h4>RISK AUDITOR</h4>
+          <p>Automated disqualification threat detection</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Legal RFP Document Scanner Simulation -->
+    <div>
+      <div class="legal-seal-box">
+        <div class="doc-scan-line"></div>
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #fbbf24;">SPECIFICATION // RFP-2026-IT</div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #64748b;">MANDATORY CLAUSES: 42</div>
+        </div>
+
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #cbd5e1; line-height: 1.8;">
+          <p style="color: #64748b;">// EXTRACTED REQUIREMENTS</p>
+          <p>• ISO 27001 Security Certification <span style="color:#10b981;">[CONFIRMED]</span></p>
+          <p>• 24/7 SLA Technical Response <span style="color:#f59e0b;">[PARTIAL]</span></p>
+          <p>• GDPR Cross-Border Data Transfer <span style="color:#10b981;">[CONFIRMED]</span></p>
+          <p>• $10M Municipal Underwriting Bond <span style="color:#ef4444;">[HIGH RISK]</span></p>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px 14px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
+          <span>VERIFICATION SEAL</span>
+          <span style="color: #fbbf24; font-weight: bold;">ORCHESTRATOR READY</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 2: MULTI-AGENT ARCHITECTURE ==================== -->
+<div class="scene" id="scene2">
+  <div class="tag-badge tag-cyan">DECOUPLED AGENT PIPELINE</div>
+  <h1 class="hero-title">DECOUPLED <span class="gradient-cyan">MULTI-AGENT PIPELINE</span></h1>
+  <p class="hero-subtitle">Coordinated by TenderComplianceOrchestrator across specialized domain agents with multi-LLM failover safety nets.</p>
+
+  <div class="agents-grid">
+    <!-- Agent 1 -->
+    <div class="agent-card gold-border">
+      <div class="agent-header">
+        <div class="agent-title">ParserAgent</div>
+        <div class="agent-badge badge-gold">PYMUPDF / TEXT</div>
+      </div>
+      <div class="agent-desc">Extracts structured clauses from raw PDFs and text, normalizes character encoding and whitespace.</div>
+      <div class="agent-tag">OUTPUT: Section blocks & normalized tender tokens</div>
+    </div>
+
+    <!-- Agent 2 -->
+    <div class="agent-card">
+      <div class="agent-header">
+        <div class="agent-title">ExtractorAgent</div>
+        <div class="agent-badge badge-cyan">MANDATORY DETECT</div>
+      </div>
+      <div class="agent-desc">Isolates actionable requirements, identifies must-have tender mandates and criteria lines.</div>
+      <div class="agent-tag">FILTER: High-priority compliance obligations</div>
+    </div>
+
+    <!-- Agent 3 -->
+    <div class="agent-card">
+      <div class="agent-header">
+        <div class="agent-title">ClassifierAgent</div>
+        <div class="agent-badge badge-emerald">5-TIER TAXONOMY</div>
+      </div>
+      <div class="agent-desc">Categorizes clauses into Eligibility, Technical, Financial, Legal, and Operational domains.</div>
+      <div class="agent-tag">ROUTING: Context-tailored compliance evaluation</div>
+    </div>
+
+    <!-- Agent 4 -->
+    <div class="agent-card cyan-border">
+      <div class="agent-header">
+        <div class="agent-title">RAGAgent</div>
+        <div class="agent-badge badge-cyan">HYBRID PGVECTOR</div>
+      </div>
+      <div class="agent-desc">Retrieves corporate capabilities using dense cosine embeddings + lexical token overlap.</div>
+      <div class="agent-tag">DATABASE: PostgreSQL pgvector HNSW index</div>
+    </div>
+
+    <!-- Agent 5 -->
+    <div class="agent-card gold-border">
+      <div class="agent-header">
+        <div class="agent-title">ComplianceAgent</div>
+        <div class="agent-badge badge-gold">TRIPLE-LLM ROUTE</div>
+      </div>
+      <div class="agent-desc">Chains Google Gemini, NVIDIA NIM, and xAI Grok with rule-based heuristic fallbacks.</div>
+      <div class="agent-tag">RESILIENCE: 100% evaluation uptime guaranteed</div>
+    </div>
+
+    <!-- Agent 6 -->
+    <div class="agent-card">
+      <div class="agent-header">
+        <div class="agent-title">RiskAgent</div>
+        <div class="agent-badge badge-emerald">DISQUALIFICATION AUDIT</div>
+      </div>
+      <div class="agent-desc">Identifies scoring risks and immediate tender disqualification clauses with mitigation plans.</div>
+      <div class="agent-tag">SEVERITY: Critical • High • Medium • Low</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 3: COMPLIANCE MATRIX ==================== -->
+<div class="scene" id="scene3">
+  <div class="tag-badge">AUDIT-READY VERIFICATION</div>
+  <h1 class="hero-title">GRANULAR <span class="gradient-gold">COMPLIANCE MATRIX</span></h1>
+  <p class="hero-subtitle">Requirement-by-requirement scoring, granular evidence citation, and reviewer feedback loops that continuously tune evaluation accuracy.</p>
+
+  <div class="matrix-table">
+    <!-- Header -->
+    <div class="matrix-row" style="background: rgba(255,255,255,0.04); font-size: 11px; color: #64748b; text-transform: uppercase;">
+      <div>TENDER REQUIREMENT</div>
+      <div>CATEGORY</div>
+      <div>COMPLIANCE STATUS</div>
+      <div>EVIDENCE CITATION</div>
+    </div>
+
+    <!-- Row 1 -->
+    <div class="matrix-row">
+      <div style="color: #fff; font-size: 14px;">The contractor must deliver ISO 27001 Cybersecurity Certification</div>
+      <div style="color: #22d3ee; font-size: 12px;">TECHNICAL [MANDATORY]</div>
+      <div>
+        <div class="status-pill status-full">✓ FULL (98%)</div>
+      </div>
+      <div style="color: #94a3b8; font-size: 12px;">Corporate Security Deck, §4.2 (Audit 2025)</div>
+    </div>
+
+    <!-- Row 2 -->
+    <div class="matrix-row">
+      <div style="color: #fff; font-size: 14px;">Support operations must be provisioned 24/7/365 with 1-hr response</div>
+      <div style="color: #f59e0b; font-size: 12px;">OPERATIONAL</div>
+      <div>
+        <div class="status-pill status-partial">⚠ PARTIAL (64%)</div>
+      </div>
+      <div style="color: #94a3b8; font-size: 12px;">Support SLA Annex B (Office-hours standard)</div>
+    </div>
+
+    <!-- Row 3 -->
+    <div class="matrix-row" style="border-color: rgba(239, 68, 68, 0.4);">
+      <div style="color: #fff; font-size: 14px;">$10,000,000 Municipal Performance Bond Underwriting</div>
+      <div style="color: #ef4444; font-size: 12px;">FINANCIAL [MANDATORY]</div>
+      <div>
+        <div class="status-pill status-critical">✕ CRITICAL RISK (0%)</div>
+      </div>
+      <div style="color: #f87171; font-size: 12px;">Disqualification Risk: Underwriter letter missing</div>
+    </div>
+  </div>
+
+  <div style="display: flex; gap: 20px; margin-top: 16px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #94a3b8;">
+    <div>• FEEDBACK LOOP: Reviewer corrections dynamically update future retrieval weights</div>
+    <div>• EXPORT FORMATS: Audit PDF, Executive Brief, JSON compliance matrix</div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 4: LEGAL COPILOT SUITE ==================== -->
+<div class="scene" id="scene4">
+  <div class="tag-badge tag-emerald">INTERACTIVE LEGAL WORKSPACE</div>
+  <h1 class="hero-title">ENTERPRISE <span class="gradient-emerald">LEGAL COPILOT SUITE</span></h1>
+  <p class="hero-subtitle">Comprehensive tools for drafting, conversational inquiry, and statutory case law precedent research.</p>
+
+  <div class="copilot-grid">
+    <!-- Copilot Chat -->
+    <div class="copilot-card">
+      <div>
+        <div class="copilot-icon">💬</div>
+        <h3 style="font-family: 'Syne', sans-serif; font-size: 22px; color: #fff; margin-bottom: 10px;">Copilot Chat</h3>
+        <p style="font-size: 14px; color: #94a3b8; line-height: 1.6; margin-bottom: 20px;">Conversational legal assistant grounded in active tender clauses, company capabilities, and RFP specifications with context injection.</p>
+      </div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #fbbf24; background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px;">
+        "Are our data localization practices compliant with Section 8.3?"
+      </div>
+    </div>
+
+    <!-- Document Drafter -->
+    <div class="copilot-card cyan">
+      <div>
+        <div class="copilot-icon">📝</div>
+        <h3 style="font-family: 'Syne', sans-serif; font-size: 22px; color: #fff; margin-bottom: 10px;">Contract Drafter</h3>
+        <p style="font-size: 14px; color: #94a3b8; line-height: 1.6; margin-bottom: 20px;">Template-driven drafting engine generating compliant tender proposal responses, NDAs, Master Service Agreements, and custom contract terms.</p>
+      </div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #22d3ee; background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px;">
+        AUTOGEN: Executive Summary & Technical Compliance Addendum
+      </div>
+    </div>
+
+    <!-- Citation Researcher -->
+    <div class="copilot-card emerald">
+      <div>
+        <div class="copilot-icon">⚖️</div>
+        <h3 style="font-family: 'Syne', sans-serif; font-size: 22px; color: #fff; margin-bottom: 10px;">Citation Researcher</h3>
+        <p style="font-size: 14px; color: #94a3b8; line-height: 1.6; margin-bottom: 20px;">Statutory cross-referencing and case law search verifying precedent rulings, procurement regulations, and jurisdictional validity.</p>
+      </div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #34d399; background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px;">
+        INDEX: Public Procurement Act & Commercial Case Precedents
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 5: PRODUCTION PARITY & OUTRO ==================== -->
+<div class="scene" id="scene5">
+  <div class="tag-badge">ENTERPRISE ARCHITECTURE</div>
+  <h1 class="hero-title">PRODUCTION PARITY & <span class="gradient-gold">OPEN SOURCE</span></h1>
+  <p class="hero-subtitle">Built for enterprise resilience with dual-database parity, multi-lingual support, and full Docker deployment.</p>
+
+  <div class="outro-grid">
+    <!-- Hero Box -->
+    <div class="hero-metric-box">
+      <div class="hero-metric-title">100%</div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 15px; color: #94a3b8; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 20px;">AUDIT-READY COMPLIANCE</div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #cbd5e1; line-height: 2;">
+        • Decoupled 6-Agent Orchestration<br>
+        • Triple-LLM Failover Chain<br>
+        • Sub-Second Vector Retrieval
+      </div>
+    </div>
+
+    <!-- Stack & Repo Details -->
+    <div>
+      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px;">
+        <div style="background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px;">
+          <h4 style="color: #fff; font-size: 15px; margin-bottom: 4px;">Dual Database</h4>
+          <p style="color: #94a3b8; font-size: 12px;">SQLite Dev ↔ PostgreSQL pgvector</p>
+        </div>
+        <div style="background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px;">
+          <h4 style="color: #fff; font-size: 15px; margin-bottom: 4px;">Multilingual</h4>
+          <p style="color: #94a3b8; font-size: 12px;">EN, DE, FR, ES, NL, HI Support</p>
+        </div>
+        <div style="background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px;">
+          <h4 style="color: #fff; font-size: 15px; margin-bottom: 4px;">Security PII</h4>
+          <p style="color: #94a3b8; font-size: 12px;">OWASP Guardrails & PII Masking</p>
+        </div>
+        <div style="background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px;">
+          <h4 style="color: #fff; font-size: 15px; margin-bottom: 4px;">Deployment</h4>
+          <p style="color: #94a3b8; font-size: 12px;">FastAPI • React Vite • Docker • Render</p>
+        </div>
+      </div>
+
+      <!-- Repo Footer -->
+      <div class="repo-footer-box">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+        <div>
+          <div>GitHub Enterprise Open Source:</div>
+          <span class="url">theshauryas1/ContractLLM</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom Status Line -->
+<div class="bottom-bar">
+  <div>ORCHESTRATOR: PARSER • EXTRACTOR • RAG • COMPLIANCE • RISK</div>
+  <div>FAILOVER: GEMINI ↔ NVIDIA NIM ↔ GROK ↔ HEURISTIC // READY</div>
+</div>
+
+<script>
+  const DURATION = 24.0;
+  const scenes = [
+    { id: 'scene1', start: 0.0, end: 4.5 },
+    { id: 'scene2', start: 4.5, end: 9.5 },
+    { id: 'scene3', start: 9.5, end: 14.5 },
+    { id: 'scene4', start: 14.5, end: 19.5 },
+    { id: 'scene5', start: 19.5, end: 24.0 }
+  ];
+
+  window.seek = function(t) {
+    t = Math.max(0, Math.min(DURATION, t));
+
+    // Update telemetry timestamp
+    const mins = Math.floor(t / 60);
+    const secs = Math.floor(t % 60);
+    const ms = Math.floor((t % 1) * 100);
+    const pad = (n) => n.toString().padStart(2, '0');
+    const timeEl = document.getElementById('telemetry-time');
+    if (timeEl) timeEl.textContent = `TIME: 00:${pad(secs)}:${pad(ms)}`;
+
+    // Handle scene opacity and transitions
+    scenes.forEach(sc => {
+      const el = document.getElementById(sc.id);
+      if (!el) return;
+
+      if (t >= sc.start && t < sc.end) {
+        const localT = t - sc.start;
+        const dur = sc.end - sc.start;
+        
+        let opacity = 1.0;
+        let transY = 0;
+        let scale = 1.0;
+
+        // Fade in (0.35s)
+        if (localT < 0.35) {
+          const p = localT / 0.35;
+          opacity = p;
+          transY = 16 * (1 - p);
+          scale = 0.985 + 0.015 * p;
+        } 
+        // Fade out in last 0.35s (except end of scene 5)
+        else if (localT > dur - 0.35 && sc.id !== 'scene5') {
+          const p = (dur - localT) / 0.35;
+          opacity = p;
+          transY = -12 * (1 - p);
+          scale = 1.0 - 0.01 * (1 - p);
+        }
+
+        el.style.opacity = opacity.toFixed(3);
+        el.style.transform = `translateY(${transY.toFixed(1)}px) scale(${scale.toFixed(3)})`;
+        el.style.display = 'flex';
+      } else {
+        el.style.opacity = '0';
+        el.style.display = 'none';
+      }
+    });
+  };
+
+  // Default to Scene 1 settled
+  window.seek(1.5);
+</script>
+
+</body>
+</html>
